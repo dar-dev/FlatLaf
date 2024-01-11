@@ -22,7 +22,6 @@ plugins {
 
 flatlafJniHeaders {
 	headers = listOf(
-		"com_formdev_flatlaf_ui_FlatNativeLibrary.h",
 		"com_formdev_flatlaf_ui_FlatNativeWindowsLibrary.h",
 		"com_formdev_flatlaf_ui_FlatWindowsNativeWindowBorder.h",
 		"com_formdev_flatlaf_ui_FlatWindowsNativeWindowBorder_WndProc.h"
@@ -30,11 +29,11 @@ flatlafJniHeaders {
 }
 
 library {
-	targetMachines = listOf(
+	targetMachines.set( listOf(
 		machines.windows.x86,
 		machines.windows.x86_64,
-		machines.windows.architecture( "aarch64" )
-	)
+		//machines.windows.architecture( "aarch64" )
+	) )
 }
 
 var javaHome = System.getProperty( "java.home" )
