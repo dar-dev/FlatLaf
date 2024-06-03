@@ -5,7 +5,25 @@ FlatLaf Change Log
 
 #### New features and improvements
 
+- Button and ToggleButton: Added missing border colors for pressed and selected
+  states. (issue #848)
 - Label: Support painting background with rounded corners. (issue #842)
+- Popup: Fixed flicker of popups (e.g. tooltips) while they are moving (e.g.
+  following mouse pointer). (issues #832 and #672)
+- Theme Editor: On macOS, use larger window title bar. (PR #779)
+
+#### Fixed bugs
+
+- FlatLaf window decorations: Window top border on Windows 10 in "full window
+  content" mode was not fully repainted when activating or deactivating window.
+  (issue #809)
+- Button and ToggleButton: UI properties `[Toggle]Button.selectedForeground` and
+  `[Toggle]Button.pressedForeground` did not work for HTML text. (issue #848)
+- HTML: Fixed font sizes for HTML tags `<h1>`...`<h6>`, `<code>`, `<kbd>`,
+  `<big>`, `<small>` and `<samp>` in HTML text for components Button, CheckBox,
+  RadioButton, MenuItem (and subclasses), JideLabel, JideButton, JXBusyLabel and
+  JXHyperlink. Also fixed for Label and ToolTip if using Java 11+.
+- Theme Editor: Fixed occasional empty window on startup on macOS.
 
 #### Incompatibilities
 
