@@ -1,19 +1,28 @@
 FlatLaf Change Log
 ==================
 
-## 3.5-SNAPSHOT
+## 3.5
 
 #### New features and improvements
 
-- Button and ToggleButton: Added missing border colors for pressed and selected
-  states. (issue #848)
+- Table: Support rounded selection. (PR #856)
+- Button and ToggleButton: Added border colors for pressed and selected states.
+  (issue #848)
 - Label: Support painting background with rounded corners. (issue #842)
 - Popup: Fixed flicker of popups (e.g. tooltips) while they are moving (e.g.
   following mouse pointer). (issues #832 and #672)
+- FileChooser: Wrap shortcuts in scroll pane. (issue #828)
 - Theme Editor: On macOS, use larger window title bar. (PR #779)
 
 #### Fixed bugs
 
+- macOS: Disabled rounded popup border (see PR #772) on macOS 14.4+ because it
+  may freeze the application and crash the macOS WindowServer process (reports
+  vary from Finder restarts to OS restarts). This is a temporary change until a
+  solution is found. See NetBeans issues
+  [apache/netbeans#7560](https://github.com/apache/netbeans/issues/7560#issuecomment-2226439215)
+  and
+  [apache/netbeans#6647](https://github.com/apache/netbeans/issues/6647#issuecomment-2070124442).
 - FlatLaf window decorations: Window top border on Windows 10 in "full window
   content" mode was not fully repainted when activating or deactivating window.
   (issue #809)
@@ -30,12 +39,17 @@ FlatLaf Change Log
   updated when table width changed and was painted on wrong side in
   right-to-left component orientation).
 - Theme Editor: Fixed occasional empty window on startup on macOS.
+- FlatLaf window decorations: Fixed black line sometimes painted on top of
+  (native) window border on Windows 11. (issue #852)
+- HiDPI: Fixed incomplete component paintings at 125% or 175% scaling on Windows
+  where sometimes a 1px wide area at the right or bottom component edge is not
+  repainted. E.g. ScrollPane focus indicator border. (issues #860 and #582)
 
 #### Incompatibilities
 
 - ProgressBar: Log warning (including stack trace) when uninstalling
-  indeterminate progress bar UI or using JProgressBar.setIndeterminate(false)
-  not on AWT thread, because this may throw NPE in FlatProgressBarUI.paint().
+  indeterminate progress bar UI or using `JProgressBar.setIndeterminate(false)`
+  not on AWT thread, because this may throw NPE in `FlatProgressBarUI.paint()`.
   (issues #841 and #830)
 - Panel: Rounded background of panel with rounded corners is now painted even if
   panel is not opaque. (issue #840)

@@ -124,6 +124,11 @@ public class FlatUIUtils
 		dest.right = src.right;
 	}
 
+	/** @since 3.5 */
+	public static boolean isInsetsEmpty( Insets insets ) {
+		return insets.top == 0 && insets.left == 0 && insets.bottom == 0 && insets.right == 0;
+	}
+
 	public static Color getUIColor( String key, int defaultColorRGB ) {
 		Color color = UIManager.getColor( key );
 		return (color != null) ? color : new Color( defaultColorRGB );
@@ -1342,13 +1347,13 @@ debug*/
 		@Override
 		public void focusGained( FocusEvent e ) {
 			if( repaintCondition == null || repaintCondition.test( repaintComponent ) )
-				repaintComponent.repaint();
+				HiDPIUtils.repaint( repaintComponent );
 		}
 
 		@Override
 		public void focusLost( FocusEvent e ) {
 			if( repaintCondition == null || repaintCondition.test( repaintComponent ) )
-				repaintComponent.repaint();
+				HiDPIUtils.repaint( repaintComponent );
 		}
 	}
 
