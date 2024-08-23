@@ -1,6 +1,23 @@
 FlatLaf Change Log
 ==================
 
+## 3.5.1
+
+#### Fixed bugs
+
+- HTML: Fixed occasional cutoff wrapped text when using multi-line text in HTML
+  tags `<h1>`...`<h6>`, `<code>`, `<kbd>`, `<big>`, `<small>` or `<samp>`.
+  (issue #873; regression in 3.5)
+- Popup: Fixed `UnsupportedOperationException: PERPIXEL_TRANSLUCENT translucency
+  is not supported` exception on Haiku OS when showing popup (partly) outside of
+  window. (issue #869)
+- HiDPI: Fixed occasional wrong repaint areas when using
+  `HiDPIUtils.installHiDPIRepaintManager()`. (see PR #864)
+- Added system property `flatlaf.useSubMenuSafeTriangle` to allow disabling
+  submenu safe triangle (PR #490) for
+  [SWTSwing](https://github.com/Chrriis/SWTSwing). (issue #870)
+
+
 ## 3.5
 
 #### New features and improvements
