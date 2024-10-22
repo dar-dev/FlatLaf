@@ -1,18 +1,37 @@
 FlatLaf Change Log
 ==================
 
-## 3.5.2-SNAPSHOT
+## 3.5.2
 
 #### Fixed bugs
 
-- FlatLaf window decorations on Windows: Fixed possible application freeze when
-  using custom component that overrides `Component.contains(int x, int y)` and
-  invokes `SwingUtilities.convertPoint()` (or similar) from the overridden
-  method. (issue #878)
+- Windows: Fixed repaint issues (ghosting) on some systems (probably depending
+  on graphics card/driver). This is done by setting Java system property
+  `sun.java2d.d3d.onscreen` to `false` (but only if `sun.java2d.d3d.onscreen`,
+  `sun.java2d.d3d` and `sun.java2d.noddraw` are not yet set), which disables
+  usage of Windows Direct3D (DirectX) onscreen surfaces. Component rendering
+  still uses Direct3D. (issue #887)
+- FlatLaf window decorations:
+  - Iconify/maximize/close buttons did not fill whole title bar height, if some
+    custom component in menu bar increases title bar height. (issue #897)
+  - Windows: Fixed possible application freeze when using custom component that
+    overrides `Component.contains(int x, int y)` and invokes
+    `SwingUtilities.convertPoint()` (or similar) from the overridden method.
+    (issue #878)
 - TextComponents: Fixed too fast scrolling in multi-line text components when
   using touchpads (e.g. on macOS). (issue #892)
 - ToolBar: Fixed endless loop if button in Toolbar has focus and is made
   invisible. (issue #884)
+
+#### Other Changes
+
+- FlatLaf window decorations: Added client property `JRootPane.titleBarHeight`
+  to allow specifying a (larger) preferred height for the title bar. (issue
+  #897)
+- Added system property `flatlaf.useRoundedPopupBorder` to allow disabling
+  native rounded popup borders on Windows 11 and macOS. On macOS 14.4+, where
+  rounded popup borders are disabled since FlatLaf 3.5 because of occasional
+  problems, you can use this to enable rounded popup borders (at your risk).
 
 
 ## 3.5.1

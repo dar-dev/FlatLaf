@@ -127,6 +127,9 @@ public class FlatWindowDecorationsTest
 						+ "   @ " + bounds.x + ", " + bounds.y );
 				} else
 					fullWindowContentButtonsBoundsField.setText( "null" );
+
+				fullWindowContentButtonsBoundsLabel.setEnabled( bounds != null );
+				fullWindowContentButtonsBoundsField.setEnabled( bounds != null );
 			} );
 		}
 	}
@@ -189,6 +192,7 @@ public class FlatWindowDecorationsTest
 
 		if( rightCompCheckBox.isSelected() ) {
 			rightStretchCompCheckBox.setSelected( false );
+			tallCompCheckBox.setSelected( false );
 
 			JButton myButton = new JButton( "?" );
 			myButton.putClientProperty( "JButton.buttonType", "toolBarButton" );
@@ -207,9 +211,24 @@ public class FlatWindowDecorationsTest
 
 		if( rightStretchCompCheckBox.isSelected() ) {
 			rightCompCheckBox.setSelected( false );
+			tallCompCheckBox.setSelected( false );
 
 			menuBar.add( Box.createGlue() );
 			menuBar.add( new JProgressBar() );
+		}
+
+		menuBar.revalidate();
+		menuBar.repaint();
+	}
+
+	private void tallCompChanged() {
+		removeNonMenusFromMenuBar();
+
+		if( tallCompCheckBox.isSelected() ) {
+			rightCompCheckBox.setSelected( false );
+			rightStretchCompCheckBox.setSelected( false );
+
+			menuBar.add( new JButton( "<html>large<br>button<br>large<br>button</html>" ) );
 		}
 
 		menuBar.revalidate();
@@ -546,6 +565,16 @@ debug*/
 		}
 	}
 
+	private void titleBarHeightChanged() {
+		JRootPane rootPane = getWindowRootPane();
+		if( rootPane != null ) {
+			boolean enabled = titleBarHeightCheckBox.isSelected();
+			titleBarHeightField.setEnabled( enabled );
+
+			rootPane.putClientProperty( FlatClientProperties.TITLE_BAR_HEIGHT, enabled ? titleBarHeightField.getValue() : null );
+		}
+	}
+
 	private JRootPane getWindowRootPane() {
 		Window window = SwingUtilities.windowForComponent( this );
 		return (window instanceof RootPaneContainer)
@@ -572,12 +601,14 @@ debug*/
 		maximizedBoundsCheckBox = new JCheckBox();
 		JPanel panel4 = new JPanel();
 		showIconCheckBox = new FlatTriStateCheckBox();
+		titleBarHeightCheckBox = new JCheckBox();
 		showTitleCheckBox = new JCheckBox();
+		titleBarHeightField = new JSpinner();
 		showIconifyCheckBox = new JCheckBox();
 		showMaximizeCheckBox = new JCheckBox();
 		showCloseCheckBox = new JCheckBox();
 		fullWindowContentCheckBox = new JCheckBox();
-		JLabel fullWindowContentButtonsBoundsLabel = new JLabel();
+		fullWindowContentButtonsBoundsLabel = new JLabel();
 		fullWindowContentButtonsBoundsField = new JLabel();
 		JPanel panel6 = new JPanel();
 		menuBarCheckBox = new JCheckBox();
@@ -585,6 +616,7 @@ debug*/
 		menuBarVisibleCheckBox = new JCheckBox();
 		rightCompCheckBox = new JCheckBox();
 		rightStretchCompCheckBox = new JCheckBox();
+		tallCompCheckBox = new JCheckBox();
 		JPanel panel3 = new JPanel();
 		addMenuButton = new JButton();
 		addGlueButton = new JButton();
@@ -660,7 +692,8 @@ debug*/
 			"[fill]" +
 			"[fill]" +
 			"[]" +
-			"[]"));
+			"[]" +
+			"[40]"));
 
 		//======== panel7 ========
 		{
@@ -711,7 +744,8 @@ debug*/
 			panel4.setLayout(new MigLayout(
 				"ltr,hidemode 3,gap 0 0",
 				// columns
-				"[grow,left]",
+				"[grow,left]" +
+				"[fill]",
 				// rows
 				"[]" +
 				"[]" +
@@ -726,11 +760,22 @@ debug*/
 			showIconCheckBox.addActionListener(e -> showIconChanged());
 			panel4.add(showIconCheckBox, "cell 0 0");
 
+			//---- titleBarHeightCheckBox ----
+			titleBarHeightCheckBox.setText("Height:");
+			titleBarHeightCheckBox.addActionListener(e -> titleBarHeightChanged());
+			panel4.add(titleBarHeightCheckBox, "cell 1 0");
+
 			//---- showTitleCheckBox ----
 			showTitleCheckBox.setText("show title");
 			showTitleCheckBox.setSelected(true);
 			showTitleCheckBox.addActionListener(e -> showTitleChanged());
 			panel4.add(showTitleCheckBox, "cell 0 1");
+
+			//---- titleBarHeightField ----
+			titleBarHeightField.setEnabled(false);
+			titleBarHeightField.setModel(new SpinnerNumberModel(44, null, null, 2));
+			titleBarHeightField.addChangeListener(e -> titleBarHeightChanged());
+			panel4.add(titleBarHeightField, "cell 1 1");
 
 			//---- showIconifyCheckBox ----
 			showIconifyCheckBox.setText("show iconfiy");
@@ -757,10 +802,12 @@ debug*/
 
 			//---- fullWindowContentButtonsBoundsLabel ----
 			fullWindowContentButtonsBoundsLabel.setText("Buttons bounds:");
+			fullWindowContentButtonsBoundsLabel.setEnabled(false);
 			panel4.add(fullWindowContentButtonsBoundsLabel, "cell 0 6");
 
 			//---- fullWindowContentButtonsBoundsField ----
 			fullWindowContentButtonsBoundsField.setText("null");
+			fullWindowContentButtonsBoundsField.setEnabled(false);
 			panel4.add(fullWindowContentButtonsBoundsField, "cell 0 6");
 		}
 		add(panel4, "cell 1 0");
@@ -773,6 +820,7 @@ debug*/
 				// columns
 				"[left]",
 				// rows
+				"[]" +
 				"[]" +
 				"[]" +
 				"[]" +
@@ -806,6 +854,11 @@ debug*/
 			rightStretchCompCheckBox.setText("right aligned stretching component");
 			rightStretchCompCheckBox.addActionListener(e -> rightStretchCompChanged());
 			panel6.add(rightStretchCompCheckBox, "cell 0 4");
+
+			//---- tallCompCheckBox ----
+			tallCompCheckBox.setText("tall component");
+			tallCompCheckBox.addActionListener(e -> tallCompChanged());
+			panel6.add(tallCompCheckBox, "cell 0 5");
 		}
 		add(panel6, "cell 2 0");
 
@@ -1243,17 +1296,21 @@ debug*/
 	private JCheckBox fullScreenCheckBox;
 	private JCheckBox maximizedBoundsCheckBox;
 	private FlatTriStateCheckBox showIconCheckBox;
+	private JCheckBox titleBarHeightCheckBox;
 	private JCheckBox showTitleCheckBox;
+	private JSpinner titleBarHeightField;
 	private JCheckBox showIconifyCheckBox;
 	private JCheckBox showMaximizeCheckBox;
 	private JCheckBox showCloseCheckBox;
 	private JCheckBox fullWindowContentCheckBox;
+	private JLabel fullWindowContentButtonsBoundsLabel;
 	private JLabel fullWindowContentButtonsBoundsField;
 	private JCheckBox menuBarCheckBox;
 	private JCheckBox menuBarEmbeddedCheckBox;
 	private JCheckBox menuBarVisibleCheckBox;
 	private JCheckBox rightCompCheckBox;
 	private JCheckBox rightStretchCompCheckBox;
+	private JCheckBox tallCompCheckBox;
 	private JButton addMenuButton;
 	private JButton addGlueButton;
 	private JButton addCaptionButton;
