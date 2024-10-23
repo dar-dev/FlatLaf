@@ -142,7 +142,7 @@ public class FlatTreeUI
 	@Styleable protected Color selectionInactiveBackground;
 	@Styleable protected Color selectionInactiveForeground;
 	@Styleable protected Color selectionBorderColor;
-	@Styleable protected Color alternateRowColor;
+	/** @since 3.6 */ @Styleable protected Color alternateRowColor;
 	/** @since 3 */ @Styleable protected Insets selectionInsets;
 	/** @since 3 */ @Styleable protected int selectionArc;
 	@Styleable protected boolean wideSelection;
@@ -577,7 +577,11 @@ public class FlatTreeUI
 		
 		if( alternateRowColor != null && row % 2 != 0 ) {
 			g.setColor( alternateRowColor );
-			FlatUIUtils.paintComponentBackground((Graphics2D) g, 0, bounds.y, tree.getWidth(), bounds.height, 0, 0);
+			
+			// paint respecting selection arc
+			final float arc = UIScale.scale( selectionArc / 2f );			
+			FlatUIUtils.paintSelection( (Graphics2D) g, 0, bounds.y, tree.getWidth(), bounds.height,
+					UIScale.scale( selectionInsets ), arc, arc, arc, arc, 0 );
 		}
 
 		// do not paint row if editing
