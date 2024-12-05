@@ -14,12 +14,17 @@ FlatLaf Change Log
     factor. (issue #904)
   - Linux: Fixed continuous cursor toggling between resize and standard cursor
     when resizing window. (issue #907)
+  - Fixed sometimes broken window moving with SplitPane in window title area in
+    "full window content" mode. (issue #926)
 - Popup: On Windows 10, fixed misplaced popup drop shadow. (issue #911;
   regression in 3.5)
 - Popup: Fixed NPE if `GraphicsConfiguration` is `null` on Windows. (issue #921)
 - Theme Editor: Fixed using color picker on secondary screen.
 - Fixed detection of Windows 11 if custom exe launcher does not specify Windows
   10+ compatibility in application manifest. (issue #916)
+- Linux: Fixed slightly different font size (or letter width) used to paint HTML
+  text when default font family is _Cantarell_ (e.g. on Fedora). (issue #912)
+
 
 ## 3.5.2
 
