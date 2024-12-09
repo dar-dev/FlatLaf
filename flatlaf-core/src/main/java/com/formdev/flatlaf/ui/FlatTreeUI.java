@@ -584,6 +584,15 @@ public class FlatTreeUI
 					UIScale.scale( selectionInsets ), arc, arc, arc, arc, 0 );
 		}
 
+		// paint alternating rows
+		if( alternateRowColor != null && row % 2 != 0 ) {
+			g.setColor( alternateRowColor );
+
+			float arc = UIScale.scale( selectionArc / 2f );
+			FlatUIUtils.paintSelection( (Graphics2D) g, 0, bounds.y, tree.getWidth(), bounds.height,
+				UIScale.scale( selectionInsets ), arc, arc, arc, arc, 0 );
+		}
+
 		// do not paint row if editing
 		if( isEditing ) {
 			// paint wide selection

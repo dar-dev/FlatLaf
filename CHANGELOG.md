@@ -1,7 +1,26 @@
 FlatLaf Change Log
 ==================
 
-## 3.5.3-SNAPSHOT
+## 3.6-SNAPSHOT
+
+#### New features and improvements
+
+- Tree: Support for alternate row highlighting. (PR #903)
+- Extras: `FlatSVGIcon` color filters now can access painting component to
+  implement component state based color mappings. (issue #906)
+
+
+## 3.5.4
+
+#### Fixed bugs
+
+- HTML: Fixed NPE when using HTML text on a component with `null` font. (issue
+  #930; PR #931; regression in 3.5)
+- Linux: Fixed NPE when using FlatLaf window decorations and switching theme.
+  (issue #933; regression in 3.5.3)
+
+
+## 3.5.3
 
 #### Fixed bugs
 
@@ -24,6 +43,10 @@ FlatLaf Change Log
   10+ compatibility in application manifest. (issue #916)
 - Linux: Fixed slightly different font size (or letter width) used to paint HTML
   text when default font family is _Cantarell_ (e.g. on Fedora). (issue #912)
+
+#### Other Changes
+
+- Class `FlatPropertiesLaf` now supports FlatLaf macOS themes as base themes.
 
 
 ## 3.5.2

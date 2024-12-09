@@ -1171,6 +1171,7 @@ ToolTip.foreground
 ToolTip.roundedBorderWidth
 ToolTipManager.enableToolTipMode
 ToolTipUI
+Tree.alternateRowColor
 Tree.ancestorInputMap
 Tree.background
 Tree.border
