@@ -1391,6 +1391,8 @@ public class TestFlatStyling
 		icon.applyStyleProperty( "borderWidth", 1.5f );
 		icon.applyStyleProperty( "selectedBorderWidth", 1.5f );
 		icon.applyStyleProperty( "disabledSelectedBorderWidth", 1.5f );
+		icon.applyStyleProperty( "indeterminateBorderWidth", 1.5f );
+		icon.applyStyleProperty( "disabledIndeterminateBorderWidth", 1.5f );
 		icon.applyStyleProperty( "arc", 5 );
 
 		// enabled
@@ -1399,6 +1401,9 @@ public class TestFlatStyling
 		icon.applyStyleProperty( "selectedBorderColor", Color.WHITE );
 		icon.applyStyleProperty( "selectedBackground", Color.WHITE );
 		icon.applyStyleProperty( "checkmarkColor", Color.WHITE );
+		icon.applyStyleProperty( "indeterminateBorderColor", Color.WHITE );
+		icon.applyStyleProperty( "indeterminateBackground", Color.WHITE );
+		icon.applyStyleProperty( "indeterminateCheckmarkColor", Color.WHITE );
 
 		// disabled
 		icon.applyStyleProperty( "disabledBorderColor", Color.WHITE );
@@ -1406,6 +1411,9 @@ public class TestFlatStyling
 		icon.applyStyleProperty( "disabledSelectedBorderColor", Color.WHITE );
 		icon.applyStyleProperty( "disabledSelectedBackground", Color.WHITE );
 		icon.applyStyleProperty( "disabledCheckmarkColor", Color.WHITE );
+		icon.applyStyleProperty( "disabledIndeterminateBorderColor", Color.WHITE );
+		icon.applyStyleProperty( "disabledIndeterminateBackground", Color.WHITE );
+		icon.applyStyleProperty( "disabledIndeterminateCheckmarkColor", Color.WHITE );
 
 		// focused
 		icon.applyStyleProperty( "focusedBorderColor", Color.WHITE );
@@ -1413,6 +1421,9 @@ public class TestFlatStyling
 		icon.applyStyleProperty( "focusedSelectedBorderColor", Color.WHITE );
 		icon.applyStyleProperty( "focusedSelectedBackground", Color.WHITE );
 		icon.applyStyleProperty( "focusedCheckmarkColor", Color.WHITE );
+		icon.applyStyleProperty( "focusedIndeterminateBorderColor", Color.WHITE );
+		icon.applyStyleProperty( "focusedIndeterminateBackground", Color.WHITE );
+		icon.applyStyleProperty( "focusedIndeterminateCheckmarkColor", Color.WHITE );
 
 		// hover
 		icon.applyStyleProperty( "hoverBorderColor", Color.WHITE );
@@ -1420,6 +1431,9 @@ public class TestFlatStyling
 		icon.applyStyleProperty( "hoverSelectedBorderColor", Color.WHITE );
 		icon.applyStyleProperty( "hoverSelectedBackground", Color.WHITE );
 		icon.applyStyleProperty( "hoverCheckmarkColor", Color.WHITE );
+		icon.applyStyleProperty( "hoverIndeterminateBorderColor", Color.WHITE );
+		icon.applyStyleProperty( "hoverIndeterminateBackground", Color.WHITE );
+		icon.applyStyleProperty( "hoverIndeterminateCheckmarkColor", Color.WHITE );
 
 		// pressed
 		icon.applyStyleProperty( "pressedBorderColor", Color.WHITE );
@@ -1427,6 +1441,9 @@ public class TestFlatStyling
 		icon.applyStyleProperty( "pressedSelectedBorderColor", Color.WHITE );
 		icon.applyStyleProperty( "pressedSelectedBackground", Color.WHITE );
 		icon.applyStyleProperty( "pressedCheckmarkColor", Color.WHITE );
+		icon.applyStyleProperty( "pressedIndeterminateBorderColor", Color.WHITE );
+		icon.applyStyleProperty( "pressedIndeterminateBackground", Color.WHITE );
+		icon.applyStyleProperty( "pressedIndeterminateCheckmarkColor", Color.WHITE );
 	}
 
 	@Test
