@@ -337,7 +337,6 @@ public class FlatListUI
 	
 		// rounded selection or selection insets
 		if( isSelected &&
-			!isFileList && // rounded selection is not supported for file list
 			(rendererComponent instanceof DefaultListCellRenderer ||
 			 rendererComponent instanceof BasicComboBoxRenderer) &&
 			(selectionArc > 0 ||
@@ -373,7 +372,7 @@ public class FlatListUI
 				@Override
 				public void fillRect( int x, int y, int width, int height ) {
 					if( !inPaintSelection &&
-						x == 0 && y == 0 && width == rowBounds.width && height == rowBounds.height &&
+						x == 0 && y == 0 && height == rowBounds.height &&
 						this.getColor() == rendererComponent.getBackground() )
 					{
 						inPaintSelection = true;
