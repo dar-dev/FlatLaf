@@ -16,6 +16,7 @@ FlatLaf Change Log
 - Extras: `FlatSVGIcon` color filters now can access painting component to
   implement component state based color mappings. (issue #906)
 - Linux: Added `libflatlaf-linux-arm64.so` for Linux on ARM64. (issue #899)
+- IntelliJ Themes: Updated to latest versions.
 
 #### Fixed bugs
 
@@ -38,6 +39,9 @@ FlatLaf Change Log
 - Linux: Popups (menus and combobox lists) were not hidden when window is moved,
   resized, maximized, restored, iconified or switched to another window. (issue
   #962)
+- Fixed loading FlatLaf UI delegate classes when using FlatLaf in special
+  application where multiple class loaders are involved. E.g. in Eclipse plugin
+  or in LibreOffice extension. (issues #955 and #851)
 
 
 ## 3.5.4
