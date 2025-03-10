@@ -60,6 +60,7 @@ import javax.swing.plaf.UIResource;
 import javax.swing.plaf.basic.BasicLookAndFeel;
 import javax.swing.table.JTableHeader;
 import com.formdev.flatlaf.*;
+import com.formdev.flatlaf.demo.intellijthemes.IJThemesDump;
 import com.formdev.flatlaf.intellijthemes.FlatAllIJThemes;
 import com.formdev.flatlaf.testing.FlatTestLaf;
 import com.formdev.flatlaf.themes.*;
@@ -105,9 +106,9 @@ public class UIDefaultsDump
 
 			dump( FlatMacLightLaf.class.getName(), dir, false );
 			dump( FlatMacDarkLaf.class.getName(), dir, false );
-		}
 
-		dump( FlatTestLaf.class.getName(), dir, false );
+			dump( FlatTestLaf.class.getName(), dir, false );
+		}
 
 //		dump( MyBasicLookAndFeel.class.getName(), dir, false );
 //		dump( MetalLookAndFeel.class.getName(), dir, false );
@@ -155,6 +156,8 @@ public class UIDefaultsDump
 	private static void dumpIntelliJThemes( File dir ) {
 		dir = new File( dir, "intellijthemes" );
 
+		IJThemesDump.enablePropertiesRecording();
+
 		for( LookAndFeelInfo info : FlatAllIJThemes.INFOS ) {
 			String lafClassName = info.getClassName();
 			String relativeLafClassName = StringUtils.removeLeading( lafClassName, "com.formdev.flatlaf.intellijthemes." );
@@ -167,6 +170,8 @@ public class UIDefaultsDump
 	}
 
 	private static void dump( String lookAndFeelClassName, File dir, boolean jide ) {
+		System.out.println( "---- "+lookAndFeelClassName+" -------------------------------" );
+
 		try {
 			UIManager.setLookAndFeel( lookAndFeelClassName );
 			if( jide )
@@ -187,8 +192,20 @@ public class UIDefaultsDump
 		dump( dir, "", lookAndFeel, defaults, key -> !key.contains( "InputMap" ), true );
 
 		if( lookAndFeel.getClass() == FlatLightLaf.class || !(lookAndFeel instanceof FlatLaf) ) {
-			dump( dir, "_InputMap", lookAndFeel, defaults, key -> key.contains( "InputMap" ), false );
-			dumpActionMaps( dir, "_ActionMap", lookAndFeel, defaults );
+			if( SystemInfo.isWindows || SystemInfo.isMacOS )
+				dump( dir, "_InputMap", lookAndFeel, defaults, key -> key.contains( "InputMap" ), false );
+
+			if( SystemInfo.isWindows )
+				dumpActionMaps( dir, "_ActionMap", lookAndFeel, defaults );
+		}
+
+		if( lookAndFeel instanceof IntelliJTheme.ThemeLaf ) {
+			File cdir = new File( dir.getPath().replace( "intellijthemes", "intellijthemes-colors" ) );
+			dumpColorsToProperties( cdir, lookAndFeel, defaults );
+
+			// dump as .properties
+			File pdir = new File( dir.getPath().replace( "intellijthemes", "intellijthemes-properties" ) );
+			IJThemesDump.dumpProperties( pdir, lookAndFeel.getClass().getSimpleName(), defaults );
 		}
 	}
 
@@ -229,8 +246,8 @@ public class UIDefaultsDump
 		if( origFile != null ) {
 			try {
 				Map<String, String> defaults1 = parse( new InputStreamReader(
-					new FileInputStream( origFile ), StandardCharsets.UTF_8 ) );
-				Map<String, String> defaults2 = parse( new StringReader( stringWriter.toString() ) );
+					new FileInputStream( origFile ), StandardCharsets.UTF_8 ), false );
+				Map<String, String> defaults2 = parse( new StringReader( stringWriter.toString() ), false );
 
 				content = diff( defaults1, defaults2 );
 			} catch( Exception ex ) {
@@ -266,6 +283,45 @@ public class UIDefaultsDump
 			javaVersion = "1.8.0";
 		File file = new File( dir, name + nameSuffix + "_"
 			+ javaVersion + ".txt" );
+
+		// write to file
+		file.getParentFile().mkdirs();
+		try( Writer fileWriter = new OutputStreamWriter(
+			new FileOutputStream( file ), StandardCharsets.UTF_8 ) )
+		{
+			fileWriter.write( stringWriter.toString().replace( "\r", "" ) );
+		} catch( IOException ex ) {
+			ex.printStackTrace();
+		}
+	}
+
+	private static void dumpColorsToProperties( File dir, LookAndFeel lookAndFeel, UIDefaults defaults ) {
+		// dump to string
+		StringWriter stringWriter = new StringWriter( 100000 );
+		new UIDefaultsDump( lookAndFeel, defaults ).dumpColorsAsProperties( new PrintWriter( stringWriter ) );
+
+		String name = lookAndFeel instanceof MyBasicLookAndFeel
+			? BasicLookAndFeel.class.getSimpleName()
+			: lookAndFeel.getClass().getSimpleName();
+		File file = new File( dir, name + ".properties" );
+
+		// build and append differences
+		if( file.exists() ) {
+			try {
+				Map<String, String> defaults1 = parse( new InputStreamReader(
+					new FileInputStream( file ), StandardCharsets.UTF_8 ), true );
+				Map<String, String> defaults2 = parse( new StringReader( stringWriter.toString() ), true );
+
+				String diff = diff( defaults1, defaults2 );
+				if( !diff.isEmpty() ) {
+					stringWriter.write( "\n\n\n\n#==== Differences ==============================================================\n\n" );
+					stringWriter.write( diff );
+				}
+			} catch( Exception ex ) {
+				ex.printStackTrace();
+				return;
+			}
+		}
 
 		// write to file
 		file.getParentFile().mkdirs();
@@ -353,7 +409,7 @@ public class UIDefaultsDump
 			buf.append( '\n' );
 	}
 
-	private static Map<String, String> parse( Reader in ) throws IOException {
+	private static Map<String, String> parse( Reader in, boolean ignoreDiffs ) throws IOException {
 		Map<String, String> defaults = new LinkedHashMap<>();
 		try( BufferedReader reader = new BufferedReader( in ) ) {
 			String lastKey = null;
@@ -368,6 +424,9 @@ public class UIDefaultsDump
 						inContrastRatios = true;
 					continue;
 				}
+
+				if( ignoreDiffs && (trimmedLine.startsWith( "- " ) || trimmedLine.startsWith( "+ " )) )
+					continue;
 
 				if( Character.isWhitespace( line.charAt( 0 ) ) ) {
 					String value = defaults.get( lastKey );
@@ -415,8 +474,8 @@ public class UIDefaultsDump
 		dumpHeader( out );
 
 		defaults.entrySet().stream()
-			.sorted( (key1, key2) -> {
-				return String.valueOf( key1 ).compareTo( String.valueOf( key2 ) );
+			.sorted( (e1, e2) -> {
+				return String.valueOf( e1.getKey() ).compareTo( String.valueOf( e2.getKey() ) );
 			} )
 			.forEach( entry -> {
 				Object key = entry.getKey();
@@ -439,6 +498,30 @@ public class UIDefaultsDump
 
 		if( contrastRatios )
 			dumpContrastRatios( out );
+	}
+
+	private void dumpColorsAsProperties( PrintWriter out ) {
+		defaults.keySet().stream()
+			.sorted( (key1, key2) -> {
+				return String.valueOf( key1 ).compareTo( String.valueOf( key2 ) );
+			} )
+			.forEach( key -> {
+				Color color = defaults.getColor( key );
+				if( color == null )
+					return;
+
+				String strKey = String.valueOf( key );
+				String prefix = keyPrefix( strKey );
+				if( !prefix.equals( lastPrefix ) ) {
+					lastPrefix = prefix;
+					out.printf( "%n%n#---- %s ----%n%n", prefix );
+				}
+
+				out.printf( "%-50s = #%06x", strKey, color.getRGB() & 0xffffff );
+				if( color.getAlpha() != 255 )
+					out.printf( "%02x", (color.getRGB() >> 24) & 0xff );
+				out.println();
+			} );
 	}
 
 	private void dumpActionMaps( PrintWriter out ) {

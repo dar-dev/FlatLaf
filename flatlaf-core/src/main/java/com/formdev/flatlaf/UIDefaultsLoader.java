@@ -41,6 +41,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import javax.swing.Icon;
 import javax.swing.UIDefaults;
@@ -61,7 +63,6 @@ import com.formdev.flatlaf.util.HSLColor;
 import com.formdev.flatlaf.util.LoggingFacade;
 import com.formdev.flatlaf.util.SoftCache;
 import com.formdev.flatlaf.util.StringUtils;
-import com.formdev.flatlaf.util.SystemInfo;
 import com.formdev.flatlaf.util.UIScale;
 
 /**
@@ -85,15 +86,14 @@ class UIDefaultsLoader
 	private static final String WILDCARD_PREFIX = "*.";
 
 	static final String KEY_VARIABLES = "FlatLaf.internal.variables";
+	static final String KEY_PROPERTIES = "FlatLaf.internal.properties";
 
 	private static int parseColorDepth;
 
 	private static Map<String, ColorUIResource> systemColorCache;
 	private static final SoftCache<String, Object> fontCache = new SoftCache<>();
 
-	static void loadDefaultsFromProperties( Class<?> lookAndFeelClass, List<FlatDefaultsAddon> addons,
-		Properties additionalDefaults, boolean dark, UIDefaults defaults )
-	{
+	static ArrayList<Class<?>> getLafClassesForDefaultsLoading( Class<?> lookAndFeelClass ) {
 		// determine classes in class hierarchy in reverse order
 		ArrayList<Class<?>> lafClasses = new ArrayList<>();
 		for( Class<?> lafClass = lookAndFeelClass;
@@ -102,20 +102,54 @@ class UIDefaultsLoader
 		{
 			lafClasses.add( 0, lafClass );
 		}
+		return lafClasses;
+	}
 
-		loadDefaultsFromProperties( lafClasses, addons, additionalDefaults, dark, defaults );
+	static Properties newUIProperties( boolean dark ) {
+		// UI key prefixes
+		String lightOrDarkPrefix = FlatLaf.getUIKeyLightOrDarkPrefix( dark );
+		Set<String> platformPrefixes = FlatLaf.getUIKeyPlatformPrefixes();
+		Set<String> specialPrefixes = FlatLaf.getUIKeySpecialPrefixes();
+
+		return new Properties() {
+			@Override
+			public synchronized Object put( Object k, Object value ) {
+				// process key prefixes (while loading properties files)
+				String key = (String) k;
+				while( key.startsWith( "[" ) ) {
+					int closeIndex = key.indexOf( ']' );
+					if( closeIndex < 0 )
+						return null; // ignore property with invalid prefix
+
+					String prefix = key.substring( 0, closeIndex + 1 );
+
+					if( specialPrefixes.contains( prefix ) )
+						break; // keep special prefix
+
+					if( !lightOrDarkPrefix.equals( prefix ) && !platformPrefixes.contains( prefix ) )
+						return null; // ignore property
+
+					// prefix is known and enabled --> remove prefix
+					key = key.substring( closeIndex + 1 );
+				}
+
+				return super.put( key, value );
+			}
+		};
 	}
 
 	static void loadDefaultsFromProperties( List<Class<?>> lafClasses, List<FlatDefaultsAddon> addons,
-		Properties additionalDefaults, boolean dark, UIDefaults defaults )
+		Consumer<Properties> intellijThemesHook, Properties additionalDefaults, boolean dark, UIDefaults defaults )
 	{
 		try {
 			// temporary cache system colors while loading defaults,
 			// which avoids that system color getter is invoked multiple times
 			systemColorCache = (FlatLaf.getSystemColorGetter() != null) ? new HashMap<>() : null;
 
+			// all properties files will be loaded into this map
+			Properties properties = newUIProperties( dark );
+
 			// load core properties files
-			Properties properties = new Properties();
 			for( Class<?> lafClass : lafClasses ) {
 				String propertiesName = '/' + lafClass.getName().replace( '.', '/' ) + ".properties";
 				try( InputStream in = lafClass.getResourceAsStream( propertiesName ) ) {
@@ -141,6 +175,10 @@ class UIDefaultsLoader
 				if( !addonClassLoaders.contains( addonClassLoader ) )
 					addonClassLoaders.add( addonClassLoader );
 			}
+
+			// apply IntelliJ themes properties
+			if( intellijThemesHook != null )
+				intellijThemesHook.accept( properties );
 
 			// load custom properties files (usually provided by applications)
 			List<Object> customDefaultsSources = FlatLaf.getCustomDefaultsSources();
@@ -198,41 +236,6 @@ class UIDefaultsLoader
 			if( additionalDefaults != null )
 				properties.putAll( additionalDefaults );
 
-			// collect all platform specific keys (but do not modify properties)
-			ArrayList<String> platformSpecificKeys = new ArrayList<>();
-			for( Object okey : properties.keySet() ) {
-				String key = (String) okey;
-				if( key.startsWith( "[" ) &&
-					(key.startsWith( "[win]" ) ||
-					 key.startsWith( "[mac]" ) ||
-					 key.startsWith( "[linux]" ) ||
-					 key.startsWith( "[light]" ) ||
-					 key.startsWith( "[dark]" )) )
-				  platformSpecificKeys.add( key );
-			}
-
-			// remove platform specific properties and re-add only properties
-			// for current platform, but with platform prefix removed
-			if( !platformSpecificKeys.isEmpty() ) {
-				// handle light/dark specific properties
-				String lightOrDarkPrefix = dark ? "[dark]" : "[light]";
-				for( String key : platformSpecificKeys ) {
-					if( key.startsWith( lightOrDarkPrefix ) )
-						properties.put( key.substring( lightOrDarkPrefix.length() ), properties.remove( key ) );
-				}
-
-				// handle platform specific properties
-				String platformPrefix =
-					SystemInfo.isWindows ? "[win]" :
-					SystemInfo.isMacOS ? "[mac]" :
-					SystemInfo.isLinux ? "[linux]" : "[unknown]";
-				for( String key : platformSpecificKeys ) {
-					Object value = properties.remove( key );
-					if( key.startsWith( platformPrefix ) )
-						properties.put( key.substring( platformPrefix.length() ), value );
-				}
-			}
-
 			// get (and remove) wildcard replacements, which override all other defaults that end with same suffix
 			HashMap<String, String> wildcards = new HashMap<>();
 			Iterator<Entry<Object, Object>> it = properties.entrySet().iterator();
@@ -286,6 +289,15 @@ class UIDefaultsLoader
 
 			// remember variables in defaults to allow using them in styles
 			defaults.put( KEY_VARIABLES, variables );
+
+			// remember properties (for testing)
+			if( FlatSystemProperties.getBoolean( KEY_PROPERTIES, false ) ) {
+				Properties properties2 = new Properties();
+				properties2.putAll( properties );
+				for( Map.Entry<String, String> e : wildcards.entrySet() )
+					properties2.put( WILDCARD_PREFIX + e.getKey(), e.getValue() );
+				defaults.put( KEY_PROPERTIES, properties2 );
+			}
 
 			// clear/disable system color cache
 			systemColorCache = null;

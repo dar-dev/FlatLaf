@@ -122,6 +122,7 @@ CheckBox.border                [lazy] 0,0,0,0  false    com.formdev.flatlaf.ui.F
 CheckBox.disabledText          #7b7b7b  HSL   0   0  48    javax.swing.plaf.ColorUIResource [UI]
 CheckBox.font                  [active] $defaultFont [UI]
 CheckBox.foreground            #262626  HSL   0   0  15    javax.swing.plaf.ColorUIResource [UI]
+CheckBox.icon                  [lazy] 15,15    com.formdev.flatlaf.icons.FlatCheckBoxIcon [UI]
 CheckBox.icon.background       #ffffff  HSL   0   0 100    javax.swing.plaf.ColorUIResource [UI]
 CheckBox.icon.borderColor      #0000003c  24%  HSLA   0   0   0 24    javax.swing.plaf.ColorUIResource [UI]
 CheckBox.icon.checkmarkColor   #007aff  HSL 211 100  50    javax.swing.plaf.ColorUIResource [UI]
@@ -136,7 +137,6 @@ CheckBox.icon.pressedBorderColor #0056cf98  60%  HSLA 215 100  41 60    javax.sw
 CheckBox.icon.selectedBackground #ffffff  HSL   0   0 100    javax.swing.plaf.ColorUIResource [UI]
 CheckBox.icon.selectedBorderColor #007aff  HSL 211 100  50    javax.swing.plaf.ColorUIResource [UI]
 CheckBox.icon.style            filled
-CheckBox.icon                  [lazy] 15,15    com.formdev.flatlaf.icons.FlatCheckBoxIcon [UI]
 CheckBox.iconTextGap           6
 CheckBox.icon[filled].background #ffffff  HSL   0   0 100    javax.swing.plaf.ColorUIResource [UI]
 CheckBox.icon[filled].borderColor #00000026  15%  HSLA   0   0   0 15    javax.swing.plaf.ColorUIResource [UI]
@@ -260,6 +260,8 @@ Component.innerFocusWidth      0
 Component.innerOutlineWidth    0
 Component.linkColor            #007aff  HSL 211 100  50    javax.swing.plaf.ColorUIResource [UI]
 Component.minimumWidth         64
+Component.success.borderColor  #8be5c4  HSL 158  63  72    javax.swing.plaf.ColorUIResource [UI]
+Component.success.focusedBorderColor #14dc92  HSL 158  83  47    javax.swing.plaf.ColorUIResource [UI]
 Component.warning.borderColor  #fed284  HSL  38  98  76    javax.swing.plaf.ColorUIResource [UI]
 Component.warning.focusedBorderColor #e2a53a  HSL  38  74  56    javax.swing.plaf.ColorUIResource [UI]
 
@@ -457,10 +459,10 @@ JXMonthView.disabledArrowColor #7b7b7b  HSL   0   0  48    javax.swing.plaf.Colo
 JXMonthView.flaggedDayForeground #e02222  HSL   0  75  51    javax.swing.plaf.ColorUIResource [UI]
 JXMonthView.font               [active] $defaultFont [UI]
 JXMonthView.leadingDayForeground #7b7b7b  HSL   0   0  48    javax.swing.plaf.ColorUIResource [UI]
-JXMonthView.monthDownFileName  [lazy] 20,20    com.formdev.flatlaf.swingx.ui.FlatMonthDownIcon [UI]
+JXMonthView.monthDownFileName  [lazy] 20,20    com.formdev.flatlaf.swingx.icons.FlatMonthDownIcon [UI]
 JXMonthView.monthStringBackground #dfdfdf  HSL   0   0  87    javax.swing.plaf.ColorUIResource [UI]
 JXMonthView.monthStringForeground #262626  HSL   0   0  15    javax.swing.plaf.ColorUIResource [UI]
-JXMonthView.monthUpFileName    [lazy] 20,20    com.formdev.flatlaf.swingx.ui.FlatMonthUpIcon [UI]
+JXMonthView.monthUpFileName    [lazy] 20,20    com.formdev.flatlaf.swingx.icons.FlatMonthUpIcon [UI]
 JXMonthView.selectedBackground #b3d2ff  HSL 216 100  85    javax.swing.plaf.ColorUIResource [UI]
 JXMonthView.todayColor         #262626  HSL   0   0  15    javax.swing.plaf.ColorUIResource [UI]
 JXMonthView.trailingDayForeground #7b7b7b  HSL   0   0  48    javax.swing.plaf.ColorUIResource [UI]
@@ -812,9 +814,9 @@ RadioButton.disabledText       #7b7b7b  HSL   0   0  48    javax.swing.plaf.Colo
 RadioButton.font               [active] $defaultFont [UI]
 RadioButton.foreground         #262626  HSL   0   0  15    javax.swing.plaf.ColorUIResource [UI]
 RadioButton.highlight          #40404026  15%  HSLA   0   0  25 15    javax.swing.plaf.ColorUIResource [UI]
+RadioButton.icon               [lazy] 15,15    com.formdev.flatlaf.icons.FlatRadioButtonIcon [UI]
 RadioButton.icon.centerDiameter 8
 RadioButton.icon.style         filled
-RadioButton.icon               [lazy] 15,15    com.formdev.flatlaf.icons.FlatRadioButtonIcon [UI]
 RadioButton.iconTextGap        6
 RadioButton.icon[filled].centerDiameter 6
 RadioButton.light              #1f1f1f26  15%  HSLA   0   0  12 15    javax.swing.plaf.ColorUIResource [UI]
@@ -865,8 +867,8 @@ Resizable.resizeBorder         [lazy] 4,4,4,4  false    com.formdev.flatlaf.ui.F
 RootPane.activeBorderColor     #777777  HSL   0   0  47    com.formdev.flatlaf.util.DerivedColor [UI]    darken(50% autoInverse)
 RootPane.background            #f6f6f6  HSL   0   0  96    javax.swing.plaf.ColorUIResource [UI]
 RootPane.border                [lazy] 1,1,1,1  false    com.formdev.flatlaf.ui.FlatRootPaneUI$FlatWindowBorder [UI]
-RootPane.borderDragThickness   5
-RootPane.cornerDragWidth       16
+RootPane.borderDragThickness   6
+RootPane.cornerDragWidth       32
 RootPane.defaultButtonWindowKeyBindings length=8    [Ljava.lang.Object;
     [0] ENTER
     [1] press
@@ -1253,15 +1255,31 @@ TextPane.selectionForeground   #262626  HSL   0   0  15    javax.swing.plaf.Colo
 TextPaneUI                     com.formdev.flatlaf.ui.FlatTextPaneUI
 
 
+#---- TipOfTheDay ----
+
+TipOfTheDay.background         #ffffff  HSL   0   0 100    javax.swing.plaf.ColorUIResource [UI]
+TipOfTheDay.border             [lazy] 1,1,1,1  false    com.formdev.flatlaf.ui.FlatLineBorder [UI]    lineColor=#00000026  15%  HSLA   0   0   0 15    javax.swing.plaf.ColorUIResource [UI]    lineThickness=1.000000
+TipOfTheDay.font               [active] $defaultFont [UI]
+TipOfTheDay.icon               [lazy] 24,24    com.formdev.flatlaf.swingx.icons.FlatTipOfTheDayIcon [UI]
+TipOfTheDay.icon.bulbColor     #ffaf0f  HSL  40 100  53    javax.swing.plaf.ColorUIResource [UI]
+TipOfTheDay.icon.socketColor   #6c707e  HSL 227   8  46    javax.swing.plaf.ColorUIResource [UI]
+TipOfTheDay.tipAreaInsets      4,16,4,16    javax.swing.plaf.InsetsUIResource [UI]
+
+
 #---- TitlePane ----
 
 TitlePane.background           #ececec  HSL   0   0  93    javax.swing.plaf.ColorUIResource [UI]
-TitlePane.buttonHoverBackground #d3d3d3  HSL   0   0  83    com.formdev.flatlaf.util.DerivedColor [UI]    darken(10% autoInverse)
+TitlePane.buttonArc            0
+TitlePane.buttonHoverBackground #dfdfdf  HSL   0   0  87    com.formdev.flatlaf.util.DerivedColor [UI]    darken(5% autoInverse)
+TitlePane.buttonInsets         0,0,0,0    javax.swing.plaf.InsetsUIResource [UI]
 TitlePane.buttonMaximizedHeight 22
 TitlePane.buttonMinimumWidth   30
-TitlePane.buttonPressedBackground #d8d8d8  HSL   0   0  85    com.formdev.flatlaf.util.DerivedColor [UI]    darken(8% autoInverse)
+TitlePane.buttonPressedBackground #e4e4e4  HSL   0   0  89    com.formdev.flatlaf.util.DerivedColor [UI]    darken(3% autoInverse)
 TitlePane.buttonSize           44,30    javax.swing.plaf.DimensionUIResource [UI]
 TitlePane.buttonSymbolHeight   10
+TitlePane.buttonsFillVertically true
+TitlePane.buttonsGap           0
+TitlePane.buttonsMargins       0,0,0,0    javax.swing.plaf.InsetsUIResource [UI]
 TitlePane.centerTitle          false
 TitlePane.centerTitleIfMenuBarEmbedded true
 TitlePane.closeHoverBackground #c42b1c  HSL   5  75  44    javax.swing.plaf.ColorUIResource [UI]
@@ -1475,14 +1493,14 @@ ViewportUI                     com.formdev.flatlaf.ui.FlatViewportUI
 
 #---- [style] ----
 
-[style].h00                    font: $h00.font
 [style].h0                     font: $h0.font
-[style].h1.regular             font: $h1.regular.font
+[style].h00                    font: $h00.font
 [style].h1                     font: $h1.font
-[style].h2.regular             font: $h2.regular.font
+[style].h1.regular             font: $h1.regular.font
 [style].h2                     font: $h2.font
-[style].h3.regular             font: $h3.regular.font
+[style].h2.regular             font: $h2.regular.font
 [style].h3                     font: $h3.font
+[style].h3.regular             font: $h3.regular.font
 [style].h4                     font: $h4.font
 [style].large                  font: $large.font
 [style].light                  font: $light.font
@@ -1632,6 +1650,11 @@ small.font                     [active] Segoe UI plain 10    javax.swing.plaf.Fo
 #---- swingx/TaskPane ----
 
 swingx/TaskPaneUI              com.formdev.flatlaf.swingx.ui.FlatTaskPaneUI
+
+
+#---- swingx/TipOfTheDay ----
+
+swingx/TipOfTheDayUI           com.formdev.flatlaf.swingx.ui.FlatTipOfTheDayUI
 
 
 #----  ----

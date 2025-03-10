@@ -23,8 +23,27 @@ FlatLaf Change Log
 - Tree: Support wide cell renderer. (issue #922)
 - Extras: `FlatSVGIcon` color filters now can access painting component to
   implement component state based color mappings. (issue #906)
-- Linux: Added `libflatlaf-linux-arm64.so` for Linux on ARM64. (issue #899)
-- IntelliJ Themes: Updated to latest versions.
+- Linux:
+  - Rounded iconify/maximize/close buttons if using FlatLaf window decorations.
+    (PR #971)
+  - Added `libflatlaf-linux-arm64.so` for Linux on ARM64. (issue #899)
+  - Use X11 window manager events to resize window, if FlatLaf window
+    decorations are enabled. This gives FlatLaf windows a more "native" feeling.
+    (issue #866)
+- IntelliJ Themes:
+  - Updated to latest versions and fixed various issues.
+  - Support customizing through properties files. (issue #824)
+- SwingX: Support `JXTipOfTheDay` component. (issue #980)
+- Support key prefixes for Linux desktop environments (e.g. `[gnome]`, `[kde]`
+  or `[xfce]`) in properties files. (issue #974)
+- Support custom key prefixes (e.g. `[win10]` or `[test]`) in properties files.
+  (issue #649)
+- Support multi-prefixed keys (e.g. `[dark][gnome]TitlePane.buttonBackground`).
+  The value is only used if all prefixes match current platform/theme.
+- Support new component border color to indicate success state (set client
+  property `JComponent.outline` to `success`). (PR #982, issue #945)
+- Fonts: Updated **Inter** to
+  [v4.1](https://github.com/rsms/inter/releases/tag/v4.1).
 
 #### Fixed bugs
 
@@ -50,6 +69,34 @@ FlatLaf Change Log
 - Fixed loading FlatLaf UI delegate classes when using FlatLaf in special
   application where multiple class loaders are involved. E.g. in Eclipse plugin
   or in LibreOffice extension. (issues #955 and #851)
+- HTML: Fixed rendering of `<hr noshade>` in dark themes. (issue #932)
+
+#### Incompatibilities
+
+- IntelliJ Themes:
+  - Theme prefix in `IntelliJTheme$ThemeLaf.properties` changed from
+    `[theme-name]` to `{theme-name}`.
+  - Renamed classes in package
+    `com.formdev.flatlaf.intellijthemes.materialthemeuilite` from `Flat<theme>`
+    to `FlatMT<theme>`.
+  - Removed `Gruvbox Dark Medium` and `Gruvbox Dark Soft` themes.
+- Prefixed keys in properties files (e.g. `[dark]Button.background` or
+  `[win]Button.arc`) are now handled earlier than before. In previous versions,
+  prefixed keys always had higher priority than unprefixed keys and did always
+  overwrite unprefixed keys. Now prefixed keys are handled in same order as
+  unprefixed keys, which means that if a key is prefixed and unprefixed (e.g.
+  `[win]Button.arc` and `Button.arc`), the one which is last specified in
+  properties file is used.\
+  Following worked in previous versions, but now `Button.arc` is always `6`:
+  ~~~properties
+  [win]Button.arc = 12
+  Button.arc = 6
+  ~~~
+  This works in new (and old) versions:
+  ~~~properties
+  Button.arc = 6
+  [win]Button.arc = 12
+  ~~~
 
 
 ## 3.5.4
