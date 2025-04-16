@@ -1,7 +1,7 @@
 FlatLaf Change Log
 ==================
 
-## 3.6-SNAPSHOT
+## 3.6
 
 #### New features and improvements
 
@@ -21,6 +21,8 @@ FlatLaf Change Log
 - List: Support for alternate row highlighting. (PR #939)
 - Tree: Support for alternate row highlighting. (PR #903)
 - Tree: Support wide cell renderer. (issue #922)
+- ScrollBar: Use rounded thumb also on Windows (as on macOS and Linux) and made
+  thumb slightly darker/lighter. (issue #918)
 - Extras: `FlatSVGIcon` color filters now can access painting component to
   implement component state based color mappings. (issue #906)
 - Linux:
