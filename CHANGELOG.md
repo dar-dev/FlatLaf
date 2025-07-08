@@ -1,15 +1,22 @@
 FlatLaf Change Log
 ==================
 
-## 3.7-SNAPSHOT
+## 3.6.1-SNAPSHOT
 
 - Extras: Support JSVG 2.0.0. Minimum JSVG version is now 1.6.0. (issue #997)
+- FlatLaf window decorations (Windows 10/11 only): Improved diagonal window
+  resizing on top-left and top-right window corners. Top window resize area now
+  also covers iconify/maximize/close buttons. (issue #1015)
+- ToggleButton: Styling `selectedForeground` did not work if `foreground` is
+  also styled. (issue #1017)
 - JideSplitButton: Fixed updating popup when switching theme. (issue #1000)
 - IntelliJ Themes: Fixed logging false errors when loading 3rd party
   `.theme.json` files. (issue #990)
 - Linux: Popups appeared in wrong position on multi-screen setup if primary
   display is located below or right to secondary display. (see
   [NetBeans issue #8532](https://github.com/apache/netbeans/issues/8532))
+- macOS: Fixed popup flickering after theme change. (issue #1009)
+- macOS with JetBrains Runtime: Fixed sometimes empty popups. (issue #1019)
 
 
 ## 3.6
