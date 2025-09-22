@@ -25,12 +25,15 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.StreamTokenizer;
 import java.io.StringReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -113,6 +116,14 @@ class UIDefaultsLoader
 
 		return new Properties() {
 			@Override
+			public void load( InputStream in ) throws IOException {
+				// use UTF-8 to load properties file
+				try( Reader reader = new InputStreamReader( in, StandardCharsets.UTF_8 )) {
+					super.load( reader );
+				}
+			}
+
+			@Override
 			public synchronized Object put( Object k, Object value ) {
 				// process key prefixes (while loading properties files)
 				String key = (String) k;
@@ -194,20 +205,37 @@ class UIDefaultsLoader
 					if( classLoader != null && !addonClassLoaders.contains( classLoader ) )
 						addonClassLoaders.add( classLoader );
 
-					packageName = packageName.replace( '.', '/' );
 					if( classLoader == null )
 						classLoader = FlatLaf.class.getClassLoader();
 
+					// Get package URL using ClassLoader.getResource(...) because this works
+					// also in named Java modules, even without opening the package in module-info.java.
+					// This extra step is necessary because ClassLoader.getResource("<package>/<file>.properties")
+					// does not work for named Java modules.
+					URL url = classLoader.getResource( packageName.replace( '.', '/' ) );
+					if( url == null ) {
+						LoggingFacade.INSTANCE.logSevere( "FlatLaf: Failed to find package '"
+							+ packageName + "' to load properties files.", null );
+						continue;
+					}
+					String packageUrl = url.toExternalForm();
+					if( !packageUrl.endsWith( "/" ) )
+						packageUrl = packageUrl.concat( "/" );
+
 					for( Class<?> lafClass : lafClasses ) {
-						String propertiesName = packageName + '/' + simpleClassName( lafClass ) + ".properties";
-						try( InputStream in = classLoader.getResourceAsStream( propertiesName ) ) {
-							if( in != null )
-								properties.load( in );
+						URL propertiesUrl = new URL( packageUrl + simpleClassName( lafClass ) + ".properties" );
+
+						try( InputStream in = propertiesUrl.openStream() ) {
+							properties.load( in );
+						} catch( FileNotFoundException ex ) {
+							// ignore
 						}
 					}
 				} else if( source instanceof URL ) {
 					// load from package URL
-					URL packageUrl = (URL) source;
+					String packageUrl = ((URL)source).toExternalForm();
+					if( !packageUrl.endsWith( "/" ) )
+						packageUrl = packageUrl.concat( "/" );
 					for( Class<?> lafClass : lafClasses ) {
 						URL propertiesUrl = new URL( packageUrl + simpleClassName( lafClass ) + ".properties" );
 
