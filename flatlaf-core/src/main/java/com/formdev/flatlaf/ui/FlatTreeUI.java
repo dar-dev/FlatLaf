@@ -577,7 +577,6 @@ public class FlatTreeUI
 		boolean isEditing = (editingComponent != null && editingRow == row);
 		boolean isSelected = tree.isRowSelected( row );
 		boolean isDropRow = isDropRow( row );
-		boolean needsSelectionPainting = (isSelected || isDropRow) && isPaintSelection();
 		
 		if( alternateRowColor != null && row % 2 != 0 ) {
 			g.setColor( alternateRowColor );
