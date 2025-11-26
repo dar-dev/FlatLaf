@@ -7,9 +7,12 @@ FlatLaf Change Log
 
 - System File Chooser allows using **operating system file dialogs** in Java
   Swing applications. (PR #988)
+- Zooming API. (PR #1051)
 
 #### Fixed bugs
 
+- CheckBox and RadioButton: Fixed styling of custom icon. Also fixed focus width
+  (and preferred size) if using custom icon. (PR #1060)
 - TextField: Fixed wrong leading/trailing icon placement if border is set to
   `null`. (issue #1047)
 - Extras: UI defaults inspector: Exclude inspector window from being blocked by

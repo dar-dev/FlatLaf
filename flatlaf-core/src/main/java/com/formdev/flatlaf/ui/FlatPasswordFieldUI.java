@@ -16,7 +16,6 @@
 
 package com.formdev.flatlaf.ui;
 
-import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
@@ -41,8 +40,8 @@ import javax.swing.text.JTextComponent;
 import javax.swing.text.PasswordView;
 import javax.swing.text.View;
 import com.formdev.flatlaf.FlatClientProperties;
-import com.formdev.flatlaf.icons.FlatCapsLockIcon;
 import com.formdev.flatlaf.ui.FlatStylingSupport.Styleable;
+import com.formdev.flatlaf.ui.FlatStylingSupport.StyleableObject;
 import com.formdev.flatlaf.util.HiDPIUtils;
 import com.formdev.flatlaf.util.UIScale;
 
@@ -215,12 +214,12 @@ public class FlatPasswordFieldUI
 	/** @since 2 */
 	@Override
 	protected Object applyStyleProperty( String key, Object value ) {
-		if( key.equals( "capsLockIconColor" ) && capsLockIcon instanceof FlatCapsLockIcon ) {
+		if( key.equals( "capsLockIconColor" ) && capsLockIcon instanceof StyleableObject ) {
 			if( capsLockIconShared ) {
 				capsLockIcon = FlatStylingSupport.cloneIcon( capsLockIcon );
 				capsLockIconShared = false;
 			}
-			return ((FlatCapsLockIcon)capsLockIcon).applyStyleProperty( key, value );
+			return ((StyleableObject)capsLockIcon).applyStyleProperty( key, value );
 		}
 
 		return super.applyStyleProperty( key, value );
@@ -230,14 +229,15 @@ public class FlatPasswordFieldUI
 	@Override
 	public Map<String, Class<?>> getStyleableInfos( JComponent c ) {
 		Map<String, Class<?>> infos = super.getStyleableInfos( c );
-		infos.put( "capsLockIconColor", Color.class );
+		if( capsLockIcon instanceof StyleableObject )
+			infos.putAll( ((StyleableObject)capsLockIcon).getStyleableInfos() );
 		return infos;
 	}
 
 	@Override
 	public Object getStyleableValue( JComponent c, String key ) {
-		if( key.equals( "capsLockIconColor" ) && capsLockIcon instanceof FlatCapsLockIcon )
-			return ((FlatCapsLockIcon)capsLockIcon).getStyleableValue( key );
+		if( key.equals( "capsLockIconColor" ) && capsLockIcon instanceof StyleableObject )
+			return ((StyleableObject)capsLockIcon).getStyleableValue( key );
 
 		return super.getStyleableValue( c, key );
 	}

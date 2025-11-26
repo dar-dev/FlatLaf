@@ -40,8 +40,10 @@ var javaHome = System.getProperty( "java.home" )
 if( javaHome.endsWith( "jre" ) )
 	javaHome += "/.."
 
-interface InjectedExecOps { @get:Inject val execOps: ExecOperations }
-val injected = project.objects.newInstance<InjectedExecOps>()
+interface InjectedOps {
+	@get:Inject val fs: FileSystemOperations
+	@get:Inject val e: ExecOperations
+}
 
 tasks {
 	register( "build-natives" ) {
@@ -88,9 +90,11 @@ tasks {
 			}
 		} )
 
+		val injectedOps = project.objects.newInstance<InjectedOps>()
+
 		doLast {
 			// copy shared library to flatlaf-core resources
-			copy {
+			injectedOps.fs.copy {
 				from( linkedFile )
 				into( nativesDir )
 				rename( linkedFile.get().asFile.name, libraryName )
@@ -100,9 +104,9 @@ tasks {
 			val dumpbin = "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Tools/MSVC/14.42.34433/bin/Hostx64/x64/dumpbin.exe"
 			val dll = linkedFile.asFile.get()
 			val dllDir = dll.parent
-			injected.execOps.exec { commandLine( dumpbin, "/all", "/rawdata:none", "/out:$dllDir/objdump.txt", dll ) }
-			injected.execOps.exec { commandLine( dumpbin, "/all", "/out:$dllDir/full-contents.txt", dll ) }
-			injected.execOps.exec { commandLine( dumpbin, "/disasm", "/out:$dllDir/disassemble.txt", dll ) }
+			injectedOps.e.exec { commandLine( dumpbin, "/all", "/rawdata:none", "/out:$dllDir/objdump.txt", dll ) }
+			injectedOps.e.exec { commandLine( dumpbin, "/all", "/out:$dllDir/full-contents.txt", dll ) }
+			injectedOps.e.exec { commandLine( dumpbin, "/disasm", "/out:$dllDir/disassemble.txt", dll ) }
 dump*/
 		}
 	}

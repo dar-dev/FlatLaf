@@ -45,6 +45,7 @@ import javax.swing.plaf.basic.BasicRadioButtonUI;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.icons.FlatCheckBoxIcon;
 import com.formdev.flatlaf.ui.FlatStylingSupport.Styleable;
+import com.formdev.flatlaf.ui.FlatStylingSupport.StyleableObject;
 import com.formdev.flatlaf.ui.FlatStylingSupport.StyleableUI;
 import com.formdev.flatlaf.ui.FlatStylingSupport.UnknownStyleException;
 import com.formdev.flatlaf.util.HiDPIUtils;
@@ -203,16 +204,17 @@ public class FlatRadioButtonUI
 	protected Object applyStyleProperty( AbstractButton b, String key, Object value ) {
 		// style icon
 		if( key.startsWith( "icon." ) ) {
-			if( !(icon instanceof FlatCheckBoxIcon) )
-				return new UnknownStyleException( key );
+			Icon icon = getRealIcon( b );
+			if( !(icon instanceof StyleableObject) )
+				throw new UnknownStyleException( key );
 
-			if( iconShared ) {
-				icon = FlatStylingSupport.cloneIcon( icon );
+			if( icon == this.icon && iconShared ) {
+				this.icon = icon = FlatStylingSupport.cloneIcon( icon );
 				iconShared = false;
 			}
 
 			key = key.substring( "icon.".length() );
-			return ((FlatCheckBoxIcon)icon).applyStyleProperty( key, value );
+			return ((StyleableObject)icon).applyStyleProperty( key, value );
 		}
 
 		if( "iconTextGap".equals( key ) && value instanceof Integer )
@@ -225,8 +227,9 @@ public class FlatRadioButtonUI
 	@Override
 	public Map<String, Class<?>> getStyleableInfos( JComponent c ) {
 		Map<String, Class<?>> infos = FlatStylingSupport.getAnnotatedStyleableInfos( this );
-		if( icon instanceof FlatCheckBoxIcon ) {
-			for( Map.Entry<String, Class<?>> e : ((FlatCheckBoxIcon)icon).getStyleableInfos().entrySet() )
+		Icon icon = getRealIcon( c );
+		if( icon instanceof StyleableObject ) {
+			for( Map.Entry<String, Class<?>> e : ((StyleableObject)icon).getStyleableInfos().entrySet() )
 				infos.put( "icon.".concat( e.getKey() ), e.getValue() );
 		}
 		return infos;
@@ -237,8 +240,9 @@ public class FlatRadioButtonUI
 	public Object getStyleableValue( JComponent c, String key ) {
 		// style icon
 		if( key.startsWith( "icon." ) ) {
-			return (icon instanceof FlatCheckBoxIcon)
-				? ((FlatCheckBoxIcon)icon).getStyleableValue( key.substring( "icon.".length() ) )
+			Icon icon = getRealIcon( c );
+			return (icon instanceof StyleableObject)
+				? ((StyleableObject)icon).getStyleableValue( key.substring( "icon.".length() ) )
 				: null;
 		}
 
@@ -332,14 +336,16 @@ public class FlatRadioButtonUI
 	}
 
 	private int getIconFocusWidth( JComponent c ) {
-		AbstractButton b = (AbstractButton) c;
-		Icon icon = b.getIcon();
-		if( icon == null )
-			icon = getDefaultIcon();
-
+		Icon icon = getRealIcon( c );
 		return (icon instanceof FlatCheckBoxIcon)
 			? Math.round( UIScale.scale( ((FlatCheckBoxIcon)icon).getFocusWidth() ) )
 			: 0;
+	}
+
+	private Icon getRealIcon( JComponent c ) {
+		AbstractButton b = (AbstractButton) c;
+		Icon icon = b.getIcon();
+		return (icon != null) ? icon : getDefaultIcon();
 	}
 
 	@Override

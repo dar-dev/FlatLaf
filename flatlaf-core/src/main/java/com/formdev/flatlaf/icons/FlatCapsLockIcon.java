@@ -25,7 +25,10 @@ import java.awt.geom.Area;
 import java.awt.geom.Path2D;
 import java.awt.geom.Rectangle2D;
 import java.awt.geom.RoundRectangle2D;
+import java.util.Collections;
+import java.util.Map;
 import javax.swing.UIManager;
+import com.formdev.flatlaf.ui.FlatStylingSupport.StyleableObject;
 import com.formdev.flatlaf.ui.FlatStylingSupport.UnknownStyleException;
 import com.formdev.flatlaf.ui.FlatUIUtils;
 
@@ -38,6 +41,7 @@ import com.formdev.flatlaf.ui.FlatUIUtils;
  */
 public class FlatCapsLockIcon
 	extends FlatAbstractIcon
+	implements StyleableObject
 {
 	private Path2D path;
 
@@ -46,6 +50,7 @@ public class FlatCapsLockIcon
 	}
 
 	/** @since 2 */
+	@Override
 	public Object applyStyleProperty( String key, Object value ) {
 		Object oldValue;
 		switch( key ) {
@@ -54,7 +59,14 @@ public class FlatCapsLockIcon
 		}
 	}
 
+	/** @since 3.7 */
+	@Override
+	public Map<String, Class<?>> getStyleableInfos() throws IllegalArgumentException {
+		return Collections.singletonMap( "capsLockIconColor", Color.class );
+	}
+
 	/** @since 2.5 */
+	@Override
 	public Object getStyleableValue( String key ) {
 		switch( key ) {
 			case "capsLockIconColor": return color;

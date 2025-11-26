@@ -17,6 +17,7 @@
 package com.formdev.flatlaf.ui;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.awt.Color;
 import java.awt.Component;
@@ -67,6 +68,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import com.formdev.flatlaf.icons.FlatCapsLockIcon;
 import com.formdev.flatlaf.icons.FlatCheckBoxIcon;
 import com.formdev.flatlaf.icons.FlatCheckBoxMenuItemIcon;
 import com.formdev.flatlaf.icons.FlatClearIcon;
@@ -76,7 +78,12 @@ import com.formdev.flatlaf.icons.FlatRadioButtonIcon;
 import com.formdev.flatlaf.icons.FlatRadioButtonMenuItemIcon;
 import com.formdev.flatlaf.icons.FlatSearchIcon;
 import com.formdev.flatlaf.icons.FlatSearchWithHistoryIcon;
+import com.formdev.flatlaf.ui.FlatStylingSupport.StyleableObject;
 import com.formdev.flatlaf.ui.FlatStylingSupport.StyleableUI;
+import com.formdev.flatlaf.ui.FlatStylingSupport.UnknownStyleException;
+import com.formdev.flatlaf.ui.TestFlatStyling.CustomCheckBoxIcon;
+import com.formdev.flatlaf.ui.TestFlatStyling.CustomIcon;
+import com.formdev.flatlaf.ui.TestFlatStyling.CustomRadioButtonIcon;
 
 /**
  * @author Karl Tauber
@@ -176,17 +183,13 @@ public class TestFlatStyleableValue
 	}
 
 	private void testValue( Object obj, String key, Object value ) {
-		try {
-			Method m = obj.getClass().getMethod( "applyStyleProperty", String.class, Object.class );
-			m.invoke( obj, key, value );
+		assertInstanceOf( StyleableObject.class, obj );
 
-			m = obj.getClass().getMethod( "getStyleableValue", String.class );
-			Object actualValue = m.invoke( obj, key );
+		StyleableObject sobj = (StyleableObject) obj;
+		sobj.applyStyleProperty( key, value );
+		Object actualValue = sobj.getStyleableValue( key );
 
-			assertEquals( value, actualValue );
-		} catch( Exception ex ) {
-			Assertions.fail( ex );
-		}
+		assertEquals( value, actualValue );
 	}
 
 	//---- components ---------------------------------------------------------
@@ -269,11 +272,20 @@ public class TestFlatStyleableValue
 
 	@Test
 	void checkBox() {
-		JCheckBox c = new JCheckBox();
+		checkBox( new JCheckBox() );
+		checkBox( new JCheckBox( new CustomCheckBoxIcon() ) );
+		checkBox( new JCheckBox( new CustomIcon() ) );
+	}
+
+	private void checkBox( JCheckBox c ) {
 		FlatCheckBoxUI ui = (FlatCheckBoxUI) c.getUI();
 
 		// FlatCheckBoxUI extends FlatRadioButtonUI
 		radioButton( ui, c );
+
+		// necessary to clear FlatRadioButtonUI.oldStyleValues because
+		// ui.applyStyle(...) operates on shared instance
+		ui.uninstallUI( c );
 	}
 
 	@Test
@@ -536,20 +548,41 @@ public class TestFlatStyleableValue
 
 	@Test
 	void radioButton() {
-		JRadioButton c = new JRadioButton();
+		radioButton( new JRadioButton() );
+		radioButton( new JRadioButton( new CustomRadioButtonIcon() ) );
+		radioButton( new JRadioButton( new CustomIcon() ) );
+	}
+
+	private void radioButton( JRadioButton c ) {
 		FlatRadioButtonUI ui = (FlatRadioButtonUI) c.getUI();
 
 		assertTrue( ui.getDefaultIcon() instanceof FlatRadioButtonIcon );
 
 		radioButton( ui, c );
 
-		testFloat( c, ui, "icon.centerDiameter", 1.23f );
+		if( !(c.getIcon() instanceof CustomIcon) )
+			testFloat( c, ui, "icon.centerDiameter", 1.23f );
+
+		// necessary to clear FlatRadioButtonUI.oldStyleValues because
+		// ui.applyStyle(...) operates on shared instance
+		ui.uninstallUI( c );
 	}
 
 	private void radioButton( FlatRadioButtonUI ui, AbstractButton b ) {
 		testColor( b, ui, "disabledText", 0x123456 );
 
 		//---- icon ----
+
+		if( b.getIcon() instanceof CustomIcon ) {
+			try {
+				ui.applyStyle( b, "icon.focusWidth: 1.23" );
+				assertTrue( false );
+			} catch( UnknownStyleException ex ) {
+				assertEquals( new UnknownStyleException( "icon.focusWidth" ).getMessage(), ex.getMessage() );
+			}
+			assertEquals( null, ui.getStyleableValue( b, "icon.focusWidth" ) );
+			return;
+		}
 
 		testFloat( b, ui, "icon.focusWidth", 1.23f );
 		testColor( b, ui, "icon.focusColor", 0x123456 );
@@ -1288,6 +1321,13 @@ public class TestFlatStyleableValue
 		testValue( icon, "searchIconColor", Color.WHITE );
 		testValue( icon, "searchIconHoverColor", Color.WHITE );
 		testValue( icon, "searchIconPressedColor", Color.WHITE );
+	}
+
+	@Test
+	void flatCapsLockIcon() {
+		FlatCapsLockIcon icon = new FlatCapsLockIcon();
+
+		testValue( icon, "capsLockIconColor", Color.WHITE );
 	}
 
 	//---- class TestIcon -----------------------------------------------------
