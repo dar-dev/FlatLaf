@@ -474,13 +474,12 @@ public class FlatUIUtils
 	 * Returns the scaled arc diameter of the border for the given component.
 	 */
 	public static float getBorderArc( JComponent c ) {
-		Border border = c.getBorder();
-		if( border instanceof FlatLineBorder )
-			return UIScale.scale( ((FlatLineBorder)border).getArc() );
-		
-		FlatBorder outsideBorder = getOutsideFlatBorder( c );
-		return (outsideBorder != null)
-			? UIScale.scale( (float) outsideBorder.getArc( c ) )
+		if( c.getBorder() instanceof FlatLineBorder )
+			return UIScale.scale( ((FlatLineBorder)c.getBorder()).getArc() );
+
+		FlatBorder border = getOutsideFlatBorder( c );
+		return (border != null)
+			? UIScale.scale( (float) border.getArc( c ) )
 			: 0;
 	}
 

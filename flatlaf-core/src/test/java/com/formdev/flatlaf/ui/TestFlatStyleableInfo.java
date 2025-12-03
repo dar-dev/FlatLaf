@@ -30,6 +30,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import com.formdev.flatlaf.icons.*;
+import com.formdev.flatlaf.ui.FlatInternalFrameUI.FlatInternalFrameBorder;
 import com.formdev.flatlaf.ui.TestFlatStyling.CustomCheckBoxIcon;
 import com.formdev.flatlaf.ui.TestFlatStyling.CustomIcon;
 import com.formdev.flatlaf.ui.TestFlatStyling.CustomRadioButtonIcon;
@@ -148,7 +149,15 @@ public class TestFlatStyleableInfo
 	@Test
 	void checkBox() {
 		checkBox( new JCheckBox() );
+	}
+
+	@Test
+	void checkBox2() {
 		checkBox( new JCheckBox( new CustomIcon() ) );
+	}
+
+	@Test
+	void checkBox3() {
 		checkBox( new JCheckBox( new CustomCheckBoxIcon() ) );
 	}
 
@@ -506,7 +515,15 @@ public class TestFlatStyleableInfo
 	@Test
 	void radioButton() {
 		radioButton( new JRadioButton() );
+	}
+
+	@Test
+	void radioButton2() {
 		radioButton( new JRadioButton( new CustomIcon() ) );
+	}
+
+	@Test
+	void radioButton3() {
 		radioButton( new JRadioButton( new CustomRadioButtonIcon() ) );
 	}
 
@@ -1165,6 +1182,64 @@ public class TestFlatStyleableInfo
 		assertMapEquals( expected, border.getStyleableInfos() );
 	}
 
+	@Test
+	void flatDropShadowBorder() {
+		FlatDropShadowBorder border = new FlatDropShadowBorder();
+
+		Map<String, Class<?>> expected = expectedMap(
+			"shadowColor", Color.class,
+			"shadowInsets", Insets.class,
+			"shadowOpacity", float.class
+		);
+
+		assertMapEquals( expected, border.getStyleableInfos() );
+	}
+
+	@Test
+	void flatMenuBarBorder() {
+		FlatMenuBarBorder border = new FlatMenuBarBorder();
+
+		Map<String, Class<?>> expected = expectedMap(
+			"borderColor", Color.class
+		);
+
+		assertMapEquals( expected, border.getStyleableInfos() );
+	}
+
+	@Test
+	void flatPopupMenuBorder() {
+		FlatPopupMenuBorder border = new FlatPopupMenuBorder();
+
+		Map<String, Class<?>> expected = expectedMap(
+			"borderInsets", Insets.class,
+			"borderColor", Color.class
+		);
+
+		assertMapEquals( expected, border.getStyleableInfos() );
+	}
+
+	@Test
+	void flatInternalFrameBorder() {
+		FlatInternalFrameBorder border = new FlatInternalFrameBorder();
+
+		Map<String, Class<?>> expected = expectedMap(
+			"activeBorderColor", Color.class,
+			"inactiveBorderColor", Color.class,
+			"borderLineWidth", int.class,
+			"dropShadowPainted", boolean.class,
+			"borderMargins", Insets.class,
+
+			"activeDropShadowColor", Color.class,
+			"activeDropShadowInsets", Insets.class,
+			"activeDropShadowOpacity", float.class,
+			"inactiveDropShadowColor", Color.class,
+			"inactiveDropShadowInsets", Insets.class,
+			"inactiveDropShadowOpacity", float.class
+		);
+
+		assertMapEquals( expected, border.getStyleableInfos() );
+	}
+
 	//---- icons --------------------------------------------------------------
 
 	@Test
@@ -1376,6 +1451,27 @@ public class TestFlatStyleableInfo
 
 		Map<String, Class<?>> expected = expectedMap(
 			"capsLockIconColor", Color.class
+		);
+
+		assertMapEquals( expected, icon.getStyleableInfos() );
+	}
+
+	@Test
+	void flatTabbedPaneCloseIcon() {
+		FlatTabbedPaneCloseIcon icon = new FlatTabbedPaneCloseIcon();
+
+		Map<String, Class<?>> expected = expectedMap(
+			"closeSize", Dimension.class,
+			"closeArc", int.class,
+			"closeCrossPlainSize", float.class,
+			"closeCrossFilledSize", float.class,
+			"closeCrossLineWidth", float.class,
+			"closeBackground", Color.class,
+			"closeForeground", Color.class,
+			"closeHoverBackground", Color.class,
+			"closeHoverForeground", Color.class,
+			"closePressedBackground", Color.class,
+			"closePressedForeground", Color.class
 		);
 
 		assertMapEquals( expected, icon.getStyleableInfos() );

@@ -22,9 +22,12 @@ import java.awt.SecondaryLoop;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
@@ -282,14 +285,14 @@ public class SystemFileChooser
 		this( (File) null );
 	}
 
-	/**  @see JFileChooser#JFileChooser(String) */
+	/** @see JFileChooser#JFileChooser(String) */
 	public SystemFileChooser( String currentDirectoryPath ) {
 		this( (currentDirectoryPath != null)
 			? FileSystemView.getFileSystemView().createFileObject( currentDirectoryPath )
 			: null );
 	}
 
-	/**  @see JFileChooser#JFileChooser(File) */
+	/** @see JFileChooser#JFileChooser(File) */
 	public SystemFileChooser( File currentDirectory ) {
 		setCurrentDirectory( currentDirectory );
 
@@ -367,12 +370,23 @@ public class SystemFileChooser
 		setApproveButtonMnemonic( vk );
 	}
 
-	/** @see JFileChooser#getFileSelectionMode() */
+	/**
+	 * Returns file-selection mode.
+	 * Possible values are {@link #FILES_ONLY} and {@link #DIRECTORIES_ONLY}.
+	 * Default is {@link #FILES_ONLY}.
+	 *
+	 * @see JFileChooser#getFileSelectionMode()
+	 */
 	public int getFileSelectionMode() {
 		return fileSelectionMode;
 	}
 
-	/** @see JFileChooser#setFileSelectionMode(int) */
+	/**
+	 * Sets file-selection mode.
+	 * Possible values are {@link #FILES_ONLY} and {@link #DIRECTORIES_ONLY}.
+	 *
+	 * @see JFileChooser#setFileSelectionMode(int)
+	 */
 	public void setFileSelectionMode( int fileSelectionMode ) {
 		if( fileSelectionMode != FILES_ONLY && fileSelectionMode != DIRECTORIES_ONLY )
 			throw new IllegalArgumentException( "Invalid file selection mode " + fileSelectionMode );
@@ -488,8 +502,7 @@ public class SystemFileChooser
 		if( filter == null || filters.contains( filter ) )
 			return;
 
-		if( !(filter instanceof FileNameExtensionFilter) && !(filter instanceof AcceptAllFileFilter) )
-			throw new IllegalArgumentException( "Filter class not supported: " + filter.getClass().getName() );
+		checkSupportedFileFilter( filter );
 
 		// either insert filter before "All Files" filter, or append to the end
 		int size = filters.size();
@@ -559,15 +572,35 @@ public class SystemFileChooser
 
 	/** @see JFileChooser#setFileFilter(javax.swing.filechooser.FileFilter) */
 	public void setFileFilter( FileFilter filter ) {
+		checkSupportedFileFilter( filter );
+
 		this.fileFilter = filter;
 	}
 
-	private int indexOfCurrentFilter() {
-		return filters.indexOf( fileFilter );
+	private void checkSupportedFileFilter( FileFilter filter ) throws IllegalArgumentException {
+		if( filter == null ||
+			filter instanceof FileNameExtensionFilter ||
+			filter instanceof AcceptAllFileFilter )
+		  return;
+
+		throw new IllegalArgumentException( "Filter class not supported: " + filter.getClass().getName() );
 	}
 
-	private boolean hasOnlyAcceptAll() {
-		return filters.size() == 1 && filters.get( 0 ) == getAcceptAllFileFilter();
+	private List<FileFilter> getFiltersForDialog() {
+		// has only accept-all filter
+		if( filters.size() == 1 &&
+			filters.get( 0 ) == getAcceptAllFileFilter() &&
+			(fileFilter == getAcceptAllFileFilter() || fileFilter == null) )
+		  return new ArrayList<>();
+
+		// check whether current filter is already in list
+		if( (fileFilter != null && filters.contains( fileFilter )) || fileFilter == null )
+			return filters;
+
+		// add current file filter to list
+		List<FileFilter> filters2 = new ArrayList<>( filters );
+		filters2.add( 0, fileFilter );
+		return filters2;
 	}
 
 	public ApproveCallback getApproveCallback() {
@@ -854,9 +887,10 @@ public class SystemFileChooser
 			int fileTypeIndex = 0;
 			ArrayList<String> fileTypes = new ArrayList<>();
 			if( !fc.isDirectorySelectionEnabled() ) {
-				if( !fc.hasOnlyAcceptAll() ) {
-					fileTypeIndex = fc.indexOfCurrentFilter();
-					for( FileFilter filter : fc.getChoosableFileFilters() ) {
+				List<FileFilter> filters = fc.getFiltersForDialog();
+				if( !filters.isEmpty() ) {
+					fileTypeIndex = filters.indexOf( fc.getFileFilter() );
+					for( FileFilter filter : filters ) {
 						if( filter instanceof FileNameExtensionFilter ) {
 							fileTypes.add( filter.getDescription() );
 							fileTypes.add( "*." + String.join( ";*.", ((FileNameExtensionFilter)filter).getExtensions() ) );
@@ -975,18 +1009,21 @@ public class SystemFileChooser
 			// filter
 			int fileTypeIndex = 0;
 			ArrayList<String> fileTypes = new ArrayList<>();
-			if( !fc.isDirectorySelectionEnabled() && !fc.hasOnlyAcceptAll() ) {
-				fileTypeIndex = fc.indexOfCurrentFilter();
-				for( FileFilter filter : fc.getChoosableFileFilters() ) {
-					if( filter instanceof FileNameExtensionFilter ) {
-						fileTypes.add( filter.getDescription() );
-						for( String ext : ((FileNameExtensionFilter)filter).getExtensions() )
-							fileTypes.add( ext );
-						fileTypes.add( null );
-					} else if( filter instanceof AcceptAllFileFilter ) {
-						fileTypes.add( filter.getDescription() );
-						fileTypes.add( "*" );
-						fileTypes.add( null );
+			if( !fc.isDirectorySelectionEnabled() ) {
+				List<FileFilter> filters = fc.getFiltersForDialog();
+				if( !filters.isEmpty() ) {
+					fileTypeIndex = filters.indexOf( fc.getFileFilter() );
+					for( FileFilter filter : filters ) {
+						if( filter instanceof FileNameExtensionFilter ) {
+							fileTypes.add( filter.getDescription() );
+							for( String ext : ((FileNameExtensionFilter)filter).getExtensions() )
+								fileTypes.add( ext );
+							fileTypes.add( null );
+						} else if( filter instanceof AcceptAllFileFilter ) {
+							fileTypes.add( filter.getDescription() );
+							fileTypes.add( "*" );
+							fileTypes.add( null );
+						}
 					}
 				}
 			}
@@ -1038,7 +1075,17 @@ public class SystemFileChooser
 		extends SystemFileChooserProvider
 	{
 		@Override
+		public File[] showDialog( Window owner, SystemFileChooser fc ) {
+			// fallback to Swing file chooser if JavaFX is initialized
+			if( isFXinitialized() )
+				return new SwingFileChooserProvider().showDialog( owner, fc );
+
+			return super.showDialog( owner, fc );
+		}
+
+		@Override
 		String[] showSystemDialog( Window owner, SystemFileChooser fc ) {
+			int dark = FlatLaf.isLafDark() ? 1 : 0;
 			boolean open = (fc.getDialogType() == OPEN_DIALOG);
 			String approveButtonText = fc.getApproveButtonText();
 			int approveButtonMnemonic = fc.getApproveButtonMnemonic();
@@ -1090,18 +1137,21 @@ public class SystemFileChooser
 			// filter
 			int fileTypeIndex = 0;
 			ArrayList<String> fileTypes = new ArrayList<>();
-			if( !fc.isDirectorySelectionEnabled() && !fc.hasOnlyAcceptAll() ) {
-				fileTypeIndex = fc.indexOfCurrentFilter();
-				for( FileFilter filter : fc.getChoosableFileFilters() ) {
-					if( filter instanceof FileNameExtensionFilter ) {
-						fileTypes.add( filter.getDescription() );
-						for( String ext : ((FileNameExtensionFilter)filter).getExtensions() )
-							fileTypes.add( caseInsensitiveGlobPattern( ext ) );
-						fileTypes.add( null );
-					} else if( filter instanceof AcceptAllFileFilter ) {
-						fileTypes.add( filter.getDescription() );
-						fileTypes.add( "*" );
-						fileTypes.add( null );
+			if( !fc.isDirectorySelectionEnabled() ) {
+				List<FileFilter> filters = fc.getFiltersForDialog();
+				if( !filters.isEmpty() ) {
+					fileTypeIndex = filters.indexOf( fc.getFileFilter() );
+					for( FileFilter filter : filters ) {
+						if( filter instanceof FileNameExtensionFilter ) {
+							fileTypes.add( filter.getDescription() );
+							for( String ext : ((FileNameExtensionFilter)filter).getExtensions() )
+								fileTypes.add( caseInsensitiveGlobPattern( ext ) );
+							fileTypes.add( null );
+						} else if( filter instanceof AcceptAllFileFilter ) {
+							fileTypes.add( filter.getDescription() );
+							fileTypes.add( "*" );
+							fileTypes.add( null );
+						}
 					}
 				}
 			}
@@ -1113,7 +1163,7 @@ public class SystemFileChooser
 				} : null;
 
 			// show system file dialog
-			return FlatNativeLinuxLibrary.showFileChooser( owner, open,
+			return FlatNativeLinuxLibrary.showFileChooser( owner, dark, open,
 				fc.getDialogTitle(), approveButtonText, currentName, currentFolder,
 				optionsSet, optionsClear, callback,
 				fileTypeIndex, fileTypes.toArray( new String[fileTypes.size()] ) );
@@ -1134,6 +1184,41 @@ public class SystemFileChooser
 					buf.append( ch );
 			}
 			return buf.toString();
+		}
+
+
+		private static Boolean fxinitialized;
+
+		boolean isFXinitialized() {
+			if( fxinitialized != null )
+				return fxinitialized;
+
+			// check whether JavaFX is available
+			try {
+				Class.forName( "javafx.application.Platform", false, getClass().getClassLoader() );
+			} catch( ClassNotFoundException ex ) {
+				// JavaFX is not available
+				fxinitialized = false;
+				return fxinitialized;
+			}
+
+			// check whether JavaFX is initialized
+			try {
+				Class<?> cls = Class.forName( "javafx.application.Platform" );
+				Method m = cls.getMethod( "runLater", Runnable.class );
+				m.invoke( null, (Runnable) () -> {} );
+				fxinitialized = true;
+				return fxinitialized;
+			} catch( InvocationTargetException ex ) {
+				if( ex.getCause() instanceof IllegalStateException )
+					return false; // JavaFX is available, but not (yet) initialized
+			} catch( Throwable ex ) {
+				// ignore
+			}
+
+			// other error --> assume that JavaFX is not initialized
+			fxinitialized = false;
+			return fxinitialized;
 		}
 
 		//---- class LinuxApproveContext ----
@@ -1202,6 +1287,7 @@ public class SystemFileChooser
 			chooser.setFileSelectionMode( fc.getFileSelectionMode() );
 			chooser.setMultiSelectionEnabled( fc.isMultiSelectionEnabled() );
 			chooser.setFileHidingEnabled( fc.isFileHidingEnabled() );
+			chooser.setAcceptAllFileFilterUsed( fc.isAcceptAllFileFilterUsed() );
 
 			// system file dialogs do not support multi-selection for Save File dialogs
 			if( chooser.isMultiSelectionEnabled() &&
@@ -1210,23 +1296,20 @@ public class SystemFileChooser
 			  chooser.setMultiSelectionEnabled( false );
 
 			// filter
-			if( !fc.isDirectorySelectionEnabled() && !fc.hasOnlyAcceptAll() ) {
-				FileFilter currentFilter = fc.getFileFilter();
-				for( FileFilter filter : fc.getChoosableFileFilters() ) {
-					javax.swing.filechooser.FileFilter jfilter = convertFilter( filter, chooser );
-					if( jfilter == null )
-						continue;
+			if( !fc.isDirectorySelectionEnabled() ) {
+				List<FileFilter> filters = fc.getFiltersForDialog();
+				if( !filters.isEmpty() ) {
+					FileFilter currentFilter = fc.getFileFilter();
+					chooser.removeChoosableFileFilter( chooser.getAcceptAllFileFilter() );
+					for( FileFilter filter : filters ) {
+						javax.swing.filechooser.FileFilter jfilter = convertFilter( filter, chooser );
+						if( jfilter == null )
+							continue;
 
-					chooser.addChoosableFileFilter( jfilter );
-					if( filter == currentFilter ) {
-						chooser.setFileFilter( jfilter );
-						currentFilter = null;
+						chooser.addChoosableFileFilter( jfilter );
+						if( filter == currentFilter )
+							chooser.setFileFilter( jfilter );
 					}
-				}
-				if( currentFilter != null ) {
-					javax.swing.filechooser.FileFilter jfilter = convertFilter( currentFilter, chooser );
-					if( jfilter != null )
-						chooser.setFileFilter( jfilter );
 				}
 			}
 
