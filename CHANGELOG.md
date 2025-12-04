@@ -1,13 +1,18 @@
 FlatLaf Change Log
 ==================
 
-## 3.7-SNAPSHOT
+## 3.7
 
 #### New features and improvements
 
 - System File Chooser allows using **operating system file dialogs** in Java
   Swing applications. (PR #988)
 - Zooming API. (PR #1051)
+- Icons:
+  - Support scaling Laf icons (checkbox, radiobutton, etc). (issue #1061)
+  - Scale checkbox and radiobutton icons when using
+    [text styles](https://www.formdev.com/flatlaf/typography/#text_styles)
+    `large`, `medium`, `small` and `mini`.
 - TabbedPane: Added icon-only tab mode, which shows tab icons but hides tab
   titles. Tab titles are used in "Show Hidden Tabs" popup menu. (set client
   property `JTabbedPane.tabWidthMode` to `"iconOnly"`)
@@ -27,6 +32,8 @@ FlatLaf Change Log
   modal dialogs. (issue #1048)
 - JideButton, JideToggleButton, JideSplitButton and JideToggleSplitButton: Paint
   border in button style `TOOLBAR_STYLE` if in selected state. (issue #1045)
+- IntelliJ Themes: Fixed problem when using theme instance more than once when
+  switching to that theme. (issue #990)
 
 
 ## 3.6.2
