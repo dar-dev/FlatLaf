@@ -338,7 +338,6 @@ public class FlatListUI
 	
 		// rounded selection or selection insets
 		if( (isSelected || isDropRow) &&
-			!isFileList && // rounded selection is not supported for file list
 			(rendererComponent instanceof DefaultListCellRenderer ||
 			 rendererComponent instanceof BasicComboBoxRenderer) &&
 			(selectionArc > 0 ||
