@@ -5,11 +5,15 @@ FlatLaf Change Log
 
 - ComboBox: Added UI property `ComboBox.buttonFocusedEditableBackground`. (issue
   #1068)
+- Dialog: Some client properties (e.g. `JRootPane.titleBarShowTitle`) did not
+  work before the dialog was made visible. (issue #1081)
 - Popup: Fixed scrolling popup painting issue on Windows 10 when a glass pane is
   visible and frame is maximized. (issue #1071)
 - Slider: Styling `thumbSize` or `focusWidth` did not update slider size/layout.
   (PR #1074)
 - ToolBar: Grip disappeared when switching between Look and Feels. (issue #1075)
+- macOS: Popups (menus and combobox lists) were not always hidden when window is
+  resized. (issue #1082)
 - Extras:
   - UI defaults inspector: Fixed NPE if color of `FlatLineBorder` is null. Also
     use `FlatLineBorder` line color as cell background color in "Value" column.
