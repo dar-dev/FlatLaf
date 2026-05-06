@@ -5,8 +5,16 @@ FlatLaf Change Log
 
 - System File Chooser:
   - macOS: `Cmd+A` (**Select All**) did not work in file dialog. (issue #1084)
+  - Block Swing input events (mouse, keyboard, etc.) while system file dialog is
+    shown. (issue #1100)
 - macOS: Fixed missing close/iconify/maximize buttons on inactive window, if
   system appearance is dark, but application appearance is light. (issue #1032)
+- Linux with JetBrains Runtime: Fixed mouse "jumping" to other position when
+  moving window on scaled secondary screen, if using FlatLaf window decorations.
+  (issue #1103)
+- TextComponents: Fixed preferred width when leading/trailing components or
+  icons are present. (issue #1110)
+- JideTabbedPane: Support card tabs. (PR #1094)
 
 
 ## 3.7.1

@@ -23,6 +23,8 @@ import java.awt.FileDialog;
 import java.awt.Frame;
 import java.awt.Point;
 import java.awt.Window;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
@@ -363,6 +365,8 @@ public class FlatSystemFileChooserTest
 	}
 
 	private void showWithOwner( Consumer<Window> showConsumer ) {
+		System.out.println();
+
 		Window frame = SwingUtilities.windowForComponent( this );
 		if( ownerFrameRadioButton.isSelected() )
 			showConsumer.accept( frame );
@@ -370,6 +374,8 @@ public class FlatSystemFileChooserTest
 			new DummyModalDialog( frame, showConsumer ).setVisible( true );
 		else
 			showConsumer.accept( null );
+
+		System.out.println();
 	}
 
 	private void currentDirChanged() {
@@ -537,6 +543,16 @@ public class FlatSystemFileChooserTest
 		String sourceStr = (source instanceof Component) ? ((Component)source).getName() : String.valueOf( source );
 		String oppositeStr = (opposite != null) ? opposite.getName() : null;
 		System.out.println( typeStr + "  source " + sourceStr + "   opposite " + oppositeStr );
+	}
+
+	private void addMouseListener( JButton button ) {
+		button.addMouseListener( new MouseListener() {
+			@Override public void mouseClicked( MouseEvent e )  { System.out.println( e ); }
+			@Override public void mousePressed( MouseEvent e )  { System.out.println( e ); }
+			@Override public void mouseReleased( MouseEvent e ) { System.out.println( e ); }
+			@Override public void mouseEntered( MouseEvent e )  { System.out.println( e ); }
+			@Override public void mouseExited( MouseEvent e )  { System.out.println( e ); }
+		} );
 	}
 
 	private void initComponents() {
@@ -854,6 +870,15 @@ public class FlatSystemFileChooserTest
 		ownerButtonGroup.add(ownerDialogRadioButton);
 		ownerButtonGroup.add(ownerNullRadioButton);
 		// JFormDesigner - End of component initialization  //GEN-END:initComponents
+
+		addMouseListener( openButton );
+		addMouseListener( saveButton );
+		addMouseListener( swingOpenButton );
+		addMouseListener( swingSaveButton );
+		addMouseListener( awtOpenButton );
+		addMouseListener( awtSaveButton );
+		addMouseListener( javafxOpenButton );
+		addMouseListener( javafxSaveButton );
 	}
 
 	// JFormDesigner - Variables declaration - DO NOT MODIFY  //GEN-BEGIN:variables

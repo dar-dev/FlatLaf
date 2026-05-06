@@ -553,14 +553,30 @@ debug*/
 		size.width += getLeadingIconWidth() + getTrailingIconWidth();
 
 		// add width of leading and trailing components
+		boolean leftCompVisible = false;
+		boolean rightCompVisible = false;
 		for( JComponent comp : getLeadingComponents() ) {
-			if( comp != null && comp.isVisible() )
+			if( comp != null && comp.isVisible() ) {
 				size.width += comp.getPreferredSize().width;
+				leftCompVisible = true;
+			}
 		}
 		for( JComponent comp : getTrailingComponents() ) {
-			if( comp != null && comp.isVisible() )
+			if( comp != null && comp.isVisible() ) {
 				size.width += comp.getPreferredSize().width;
+				rightCompVisible = true;
+			}
 		}
+
+		// if leading/trailing icons or components are shown,
+		// then the left/right insets are reduced to the top inset,
+		// which places the icon nicely centered on left/right side
+		// --> reduce width if necessary
+		Insets diffInsets = getDiffInsets( leftCompVisible, rightCompVisible );
+		if( diffInsets.left > 0 )
+			size.width -= diffInsets.left;
+		if( diffInsets.right > 0 )
+			size.width -= diffInsets.right;
 
 		return size;
 	}
@@ -643,48 +659,60 @@ debug*/
 		// remove width of leading/trailing components
 		JComponent[] leftComponents = ltr ? getLeadingComponents() : getTrailingComponents();
 		JComponent[] rightComponents = ltr ? getTrailingComponents() : getLeadingComponents();
-		boolean leftVisible = false;
-		boolean rightVisible = false;
+		boolean leftCompVisible = false;
+		boolean rightCompVisible = false;
 		for( JComponent leftComponent : leftComponents ) {
 			if( leftComponent != null && leftComponent.isVisible() ) {
 				int w = leftComponent.getPreferredSize().width;
 				r.x += w;
 				r.width -= w;
-				leftVisible = true;
+				leftCompVisible = true;
 			}
 		}
 		for( JComponent rightComponent : rightComponents ) {
 			if( rightComponent != null && rightComponent.isVisible() ) {
 				r.width -= rightComponent.getPreferredSize().width;
-				rightVisible = true;
+				rightCompVisible = true;
 			}
 		}
 
-		// if a leading/trailing icons (or components) are shown, then the left/right insets are reduced
-		// to the top inset, which places the icon nicely centered on left/right side
-		if( leftVisible || (ltr ? hasLeadingIcon() : hasTrailingIcon()) ) {
-			// reduce left inset
-			Insets insets = getComponent().getInsets();
-			int newLeftInset = Math.min( insets.left, insets.top );
-			if( newLeftInset < insets.left ) {
-				int diff = insets.left - newLeftInset;
-				r.x -= diff;
-				r.width += diff;
-			}
+		// if leading/trailing icons or components are shown,
+		// then the left/right insets are reduced to the top inset,
+		// which places the icon nicely centered on left/right side
+		Insets diffInsets = getDiffInsets( leftCompVisible, rightCompVisible );
+		if( diffInsets.left > 0 ) {
+			r.x -= diffInsets.left;
+			r.width += diffInsets.left;
 		}
-		if( rightVisible || (ltr ? hasTrailingIcon() : hasLeadingIcon()) ) {
-			// reduce right inset
-			Insets insets = getComponent().getInsets();
-			int newRightInset = Math.min( insets.right, insets.top );
-			if( newRightInset < insets.left )
-				r.width += insets.right - newRightInset;
-		}
+		if( diffInsets.right > 0 )
+			r.width += diffInsets.right;
 
 		// make sure that width and height are not negative
 		r.width = Math.max( r.width, 0 );
 		r.height = Math.max( r.height, 0 );
 
 		return r;
+	}
+
+	private Insets getDiffInsets( boolean leftCompVisible, boolean rightCompVisible ) {
+		int left = 0;
+		int right = 0;
+		boolean ltr = isLeftToRight();
+		if( leftCompVisible || (ltr ? hasLeadingIcon() : hasTrailingIcon()) ) {
+			// reduce left inset
+			Insets insets = getComponent().getInsets();
+			int newLeftInset = Math.min( insets.left, insets.top );
+			if( newLeftInset < insets.left )
+				left = insets.left - newLeftInset;
+		}
+		if( rightCompVisible || (ltr ? hasTrailingIcon() : hasLeadingIcon()) ) {
+			// reduce right inset
+			Insets insets = getComponent().getInsets();
+			int newRightInset = Math.min( insets.right, insets.top );
+			if( newRightInset < insets.right )
+				right = insets.right - newRightInset;
+		}
+		return new Insets( 0, left, 0, right );
 	}
 
 	/** @since 2 */

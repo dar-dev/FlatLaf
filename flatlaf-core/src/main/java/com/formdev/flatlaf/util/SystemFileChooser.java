@@ -16,6 +16,7 @@
 
 package com.formdev.flatlaf.util;
 
+import java.awt.AWTEvent;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.EventQueue;
@@ -24,6 +25,9 @@ import java.awt.KeyboardFocusManager;
 import java.awt.SecondaryLoop;
 import java.awt.Toolkit;
 import java.awt.Window;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -773,7 +777,8 @@ public class SystemFileChooser
 	}
 
 	private FileChooserProvider getProvider() {
-		if( !FlatSystemProperties.getBoolean( FlatSystemProperties.USE_SYSTEM_FILE_CHOOSER, true ) )
+		if( !FlatSystemProperties.getBoolean( FlatSystemProperties.USE_SYSTEM_FILE_CHOOSER, true ) ||
+				SystemInfo.isProjector || SystemInfo.isWebswing || SystemInfo.isWinPE )
 			return new SwingFileChooserProvider();
 
 		if( SystemInfo.isWindows_10_orLater && FlatNativeWindowsLibrary.isLoaded() )
@@ -810,14 +815,25 @@ public class SystemFileChooser
 			}
 
 			AtomicReference<String[]> filenamesRef = new AtomicReference<>();
+			InputBlockingEventQueue queue = InputBlockingEventQueue.install();
 
-			// create secondary event look and invoke system file dialog on a new thread
-			SecondaryLoop secondaryLoop = Toolkit.getDefaultToolkit().getSystemEventQueue().createSecondaryLoop();
-			new Thread( () -> {
-				filenamesRef.set( showSystemDialog( owner, fc ) );
-				secondaryLoop.exit();
-			}, "FlatLaf SystemFileChooser" ).start();
-			secondaryLoop.enter();
+			try {
+				// create secondary event look and invoke system file dialog on a new thread
+				SecondaryLoop secondaryLoop = Toolkit.getDefaultToolkit().getSystemEventQueue().createSecondaryLoop();
+				new Thread( () -> {
+					try {
+						filenamesRef.set( showSystemDialog( owner, fc ) );
+					} finally {
+						secondaryLoop.exit();
+					}
+				}, "FlatLaf SystemFileChooser" ).start();
+
+				// enter secondary loop, which waits until system file dialog is closed
+				secondaryLoop.enter();
+			} finally {
+				if( queue != null )
+					queue.uninstall();
+			}
 
 			// dispose dummy window to allow AWT to auto-shutdown
 			if( dummyWindow != null )
@@ -869,6 +885,72 @@ public class SystemFileChooser
 					return true;
 			}
 			return false;
+		}
+
+		//---- class InputBlockingEventQueue ----------------------------------
+
+		/**
+		 * Used while system file dialog is displayed to block some Swing events.
+		 * This is similar to what Swing does when showing modal dialogs.
+		 * See class {@code java.awt.ModalEventFilter}.
+		 * <p>
+		 * Without this, it would be possible for the user to e.g. press some
+		 * shortcut keys during creation of system file dialog, which is done
+		 * on another thread, and open additional dialogs.
+		 * E.g. press Ctrl+O twice, could open two file dialogs.
+		 */
+		private static class InputBlockingEventQueue
+			extends EventQueue
+		{
+			private static boolean problemLogged;
+
+			static InputBlockingEventQueue install() {
+				InputBlockingEventQueue queue = new InputBlockingEventQueue();
+
+				try {
+					Toolkit toolkit = Toolkit.getDefaultToolkit();
+					toolkit.getSystemEventQueue().push( queue );
+
+					// check whether push() worked
+					// (e.g. SWTSwing uses own event queue that does not support push())
+					if( toolkit.getSystemEventQueue() != queue ) {
+						logEventQueuePushProblem( null );
+						return null;
+					}
+
+					return queue;
+				} catch( RuntimeException ex ) {
+					// catch runtime exception from EventQueue.push()
+					logEventQueuePushProblem( ex );
+					return null;
+				}
+			}
+
+			private static void logEventQueuePushProblem( Throwable t ) {
+				if( problemLogged )
+					return;
+				problemLogged = true;
+
+				LoggingFacade.INSTANCE.logSevere( "FlatLaf: Failed to push input-blocking event queue.", t );
+			}
+
+			void uninstall() {
+				super.pop();
+			}
+
+			@Override
+			protected void dispatchEvent( AWTEvent event ) {
+				int eventID = event.getID();
+				if( (eventID >= MouseEvent.MOUSE_FIRST && eventID <= MouseEvent.MOUSE_LAST) ||
+					(eventID >= KeyEvent.KEY_FIRST && eventID <= KeyEvent.KEY_LAST) ||
+					(eventID >= ActionEvent.ACTION_FIRST && eventID <= ActionEvent.ACTION_LAST) )
+				{
+//					System.out.println( "BLOCKED " + event );
+					return;
+				}
+
+				super.dispatchEvent( event );
+			}
 		}
 	}
 

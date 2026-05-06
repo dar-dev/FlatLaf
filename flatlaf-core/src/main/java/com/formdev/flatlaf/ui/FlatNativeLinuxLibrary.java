@@ -18,6 +18,7 @@ package com.formdev.flatlaf.ui;
 
 import java.awt.GraphicsConfiguration;
 import java.awt.Point;
+import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.MouseEvent;
@@ -78,7 +79,7 @@ public class FlatNativeLinuxLibrary
 	}
 
 	static boolean moveOrResizeWindow( Window window, MouseEvent e, int direction ) {
-		Point pt = scale( window, e.getLocationOnScreen() );
+		Point pt = swingToX11Coordinates( window, e.getLocationOnScreen() );
 		return xMoveOrResizeWindow( window, pt.x, pt.y, direction );
 
 /*
@@ -94,7 +95,7 @@ public class FlatNativeLinuxLibrary
 	}
 
 	static boolean showWindowMenu( Window window, MouseEvent e ) {
-		Point pt = scale( window, e.getLocationOnScreen() );
+		Point pt = swingToX11Coordinates( window, e.getLocationOnScreen() );
 		return xShowWindowMenu( window, pt.x, pt.y );
 
 /*
@@ -109,15 +110,29 @@ public class FlatNativeLinuxLibrary
 */
 	}
 
-	private static Point scale( Window window, Point pt ) {
+	private static Point swingToX11Coordinates( Window window, Point pt ) {
 		GraphicsConfiguration gc = window.getGraphicsConfiguration();
 		if( gc == null )
 			return pt;
 
 		AffineTransform transform = gc.getDefaultTransform();
-		int x = (int) Math.round( pt.x * transform.getScaleX() );
-		int y = (int) Math.round( pt.y * transform.getScaleY() );
-		return new Point( x, y );
+		if( SystemInfo.isJetBrainsJVM && SystemInfo.isJava_17_orLater ) {
+			// JetBrains Runtime 17+ uses different coordinate system for
+			// scaled multi-screen environments than OpenJDK.
+			// The origin of secondary screens is different to OpenJDK.
+			// - JetBrains Runtime 17+ uses native screen resolution of primary screen
+			//   as origin for secondary screen.
+			// - OpenJDK uses scaled bounds of primary screen
+			//   as origin for secondary screen.
+			Rectangle bounds = gc.getBounds();
+			int x = (int) Math.round( (pt.x - bounds.x) * transform.getScaleX() ) + bounds.x;
+			int y = (int) Math.round( (pt.y - bounds.y) * transform.getScaleY() ) + bounds.y;
+			return new Point( x, y );
+		} else {
+			int x = (int) Math.round( pt.x * transform.getScaleX() );
+			int y = (int) Math.round( pt.y * transform.getScaleY() );
+			return new Point( x, y );
+		}
 	}
 
 	// X Window System
