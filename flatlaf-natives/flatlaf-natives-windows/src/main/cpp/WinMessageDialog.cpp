@@ -40,10 +40,10 @@ extern void rt_wcscpy( wchar_t* dest, const wchar_t* src );
 static byte* createInMemoryTemplate( HWND owner, int messageType, LPCWSTR title, LPCWSTR text,
 	int defaultButton, int buttonCount, LPCWSTR* buttons );
 static INT_PTR CALLBACK messageDialogProc( HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam );
-static int textLengthAsDLUs( HDC hdc, LPCWSTR str, int strLen );
-static LONG pixel2dluX( LONG px );
-static LONG pixel2dluY( LONG px );
-static LONG dluX2pixel( LONG dluX );
+static int textLengthAsDLUs( HDC hdc, LPCWSTR str, int strLen, LONG baseUnitX );
+static LONG pixel2dluX( LONG px, LONG baseUnitX );
+static LONG pixel2dluY( LONG px, LONG baseUnitY );
+static LONG dluX2pixel( LONG dluX, LONG baseUnitX );
 static LPWORD lpwAlign( LPWORD lpIn );
 
 
@@ -115,6 +115,12 @@ static byte* createInMemoryTemplate( HWND owner, int messageType, LPCWSTR title,
 	if( !::SystemParametersInfo( SPI_GETNONCLIENTMETRICS, 0, &ncMetrics, 0 ) )
 		return NULL;
 
+//	printf( "lfMessageFont    '%S'  %d pt\n", ncMetrics.lfMessageFont.lfFaceName, ncMetrics.lfMessageFont.lfHeight );
+//	printf( "lfCaptionFont    '%S'  %d pt\n", ncMetrics.lfCaptionFont.lfFaceName, ncMetrics.lfCaptionFont.lfHeight );
+//	printf( "lfSmCaptionFont  '%S'  %d pt\n", ncMetrics.lfSmCaptionFont.lfFaceName, ncMetrics.lfSmCaptionFont.lfHeight );
+//	printf( "lfMenuFont       '%S'  %d pt\n", ncMetrics.lfMenuFont.lfFaceName, ncMetrics.lfMenuFont.lfHeight );
+//	printf( "lfStatusFont     '%S'  %d pt\n", ncMetrics.lfStatusFont.lfFaceName, ncMetrics.lfStatusFont.lfHeight );
+
 	// create DC to use message font
 	HDC hdcOwner = ::GetDC( owner );
 	HDC hdc = ::CreateCompatibleDC( hdcOwner );
@@ -134,6 +140,18 @@ static byte* createInMemoryTemplate( HWND owner, int messageType, LPCWSTR title,
 		return NULL;
 	}
 
+	// get dialog base unit for message font
+	TEXTMETRIC tm;
+    if( !::GetTextMetrics( hdc, &tm ) ) {
+		::DeleteDC( hdc );
+		::DeleteObject( hfont );
+		return NULL;
+	}
+    LONG baseUnitX = tm.tmAveCharWidth;
+    LONG baseUnitY = tm.tmHeight;
+//	printf( "baseUnit X/Y %d %d for message font\n", baseUnitX, baseUnitY );
+//	printf( "baseUnit X/Y %d %d for system font\n", LOWORD( ::GetDialogBaseUnits() ), HIWORD( ::GetDialogBaseUnits() ) );
+
 	//---- calculate layout (in DLUs) ----
 
 	// layout icon
@@ -148,8 +166,9 @@ static byte* createInMemoryTemplate( HWND owner, int messageType, LPCWSTR title,
 	}
 	int ix = INSETS_LEFT;
 	int iy = INSETS_TOP;
-	int iw = pixel2dluX( ::GetSystemMetrics( SM_CXICON ) );
-	int ih = pixel2dluY( ::GetSystemMetrics( SM_CYICON ) );
+	int iw = pixel2dluX( ::GetSystemMetrics( SM_CXICON ), baseUnitX );
+	int ih = pixel2dluY( ::GetSystemMetrics( SM_CYICON ), baseUnitY );
+//	printf( "icon size: %d,%d px   %d,%d dlu\n", ::GetSystemMetrics( SM_CXICON ), ::GetSystemMetrics( SM_CYICON ), iw, ih );
 
 	// layout text
 	int tx = ix + (icon != NULL ? iw + ICON_TEXT_GAP : 0);
@@ -169,8 +188,9 @@ static byte* createInMemoryTemplate( HWND owner, int messageType, LPCWSTR title,
 		int lineLen = t - lineStart;
 		int fit = 0;
 		SIZE size{ 0 };
-		if( !::GetTextExtentExPoint( hdc, lineStart, lineLen, dluX2pixel( LABEL_MAX_WIDTH ), &fit, NULL, &size ) )
+		if( !::GetTextExtentExPoint( hdc, lineStart, lineLen, dluX2pixel( LABEL_MAX_WIDTH, baseUnitX ), &fit, NULL, &size ) )
 			break;
+//		printf( "text extend: fit %d chars   size %d,%d px   text: %d '%S'\n", fit, size.cx, size.cy, lineLen, lineStart );
 
 		if( fit < lineLen ) {
 			// wrap too long line --> try to wrap at space character
@@ -178,7 +198,7 @@ static byte* createInMemoryTemplate( HWND owner, int messageType, LPCWSTR title,
 			for( LPWSTR t2 = lineStart + fit - 1; t2 > lineStart; t2-- ) {
 				if( *t2 == ' ' || *t2 == '\t' ) {
 					*t2 = '\n';
-					int w = textLengthAsDLUs( hdc, lineStart, t2 - lineStart );
+					int w = textLengthAsDLUs( hdc, lineStart, t2 - lineStart, baseUnitX );
 					tw = max( tw, w );
 					th += LABEL_HEIGHT;
 
@@ -192,7 +212,7 @@ static byte* createInMemoryTemplate( HWND owner, int messageType, LPCWSTR title,
 			if( !wrapped ) {
 				// not able to wrap at word --> break long word
 				int breakIndex = (lineStart + fit) - wrappedText;
-				int w = textLengthAsDLUs( hdc, lineStart, breakIndex );
+				int w = textLengthAsDLUs( hdc, lineStart, fit, baseUnitX );
 				tw = max( tw, w );
 				th += LABEL_HEIGHT;
 
@@ -213,7 +233,7 @@ static byte* createInMemoryTemplate( HWND owner, int messageType, LPCWSTR title,
 			}
 		} else {
 			// line fits into LABEL_MAX_WIDTH
-			int w = pixel2dluX( size.cx );
+			int w = pixel2dluX( size.cx, baseUnitX );
 			tw = max( tw, w );
 			th += LABEL_HEIGHT;
 			lineStart = t + 1;
@@ -222,8 +242,10 @@ static byte* createInMemoryTemplate( HWND owner, int messageType, LPCWSTR title,
 		if( *t == 0 )
 			break;
 	}
+//	printf( "tw %d dlu / %d px   th %d dlu / %d px\n", tw, dluX2pixel( tw, baseUnitX ), th, MulDiv( th, baseUnitY, 8 ) );
 	tw = min( max( tw, LABEL_MIN_WIDTH ), LABEL_MAX_WIDTH );
 	th = max( th, LABEL_HEIGHT );
+//	printf( "tw %d dlu / %d px   th %d dlu / %d px\n", tw, dluX2pixel( tw, baseUnitX ), th, MulDiv( th, baseUnitY, 8 ) );
 	if( icon != NULL && th < ih )
 		ty += (ih - th) / 2; // vertically center text
 
@@ -231,7 +253,7 @@ static byte* createInMemoryTemplate( HWND owner, int messageType, LPCWSTR title,
 	int* bw = new int[buttonCount];
 	int buttonTotalWidth = BUTTON_GAP * (buttonCount - 1);
 	for( int i = 0; i < buttonCount; i++ ) {
-		int w = textLengthAsDLUs( hdc, buttons[i], -1 ) + 16;
+		int w = textLengthAsDLUs( hdc, buttons[i], -1, baseUnitX ) + 16;
 		bw[i] = max( BUTTON_WIDTH, w );
 		buttonTotalWidth += bw[i];
 	}
@@ -241,12 +263,13 @@ static byte* createInMemoryTemplate( HWND owner, int messageType, LPCWSTR title,
 	int dy = 0;
 	int dw = max( tx + tw + INSETS_RIGHT, BUTTON_LEFT_RIGHT_GAP + buttonTotalWidth + BUTTON_LEFT_RIGHT_GAP );
 	int dh = max( iy + ih, ty + th ) + BUTTON_TOP_GAP + BUTTON_HEIGHT + INSETS_BOTTOM;
+//	printf( "dw %d dlu / %d px   dh %d dlu / %d px\n", dw, dluX2pixel( dw, baseUnitX ), dh, MulDiv( th, baseUnitY, 8 ) );
 
 	// center dialog in owner
 	RECT ownerRect{ 0 };
 	if( ::GetClientRect( owner, &ownerRect ) ) {
-		dx = (pixel2dluX( ownerRect.right - ownerRect.left ) - dw) / 2;
-		dy = (pixel2dluY( ownerRect.bottom - ownerRect.top ) - dh) / 2;
+		dx = (pixel2dluX( ownerRect.right - ownerRect.left, baseUnitX ) - dw) / 2;
+		dy = (pixel2dluY( ownerRect.bottom - ownerRect.top, baseUnitY ) - dh) / 2;
 	}
 
 	// layout button area
@@ -258,6 +281,7 @@ static byte* createInMemoryTemplate( HWND owner, int messageType, LPCWSTR title,
 		? -MulDiv( ncMetrics.lfMessageFont.lfHeight, 72, ::GetDeviceCaps( hdc, LOGPIXELSY ) )
 		: ncMetrics.lfMessageFont.lfHeight;
 	LPCWSTR fontFaceName = ncMetrics.lfMessageFont.lfFaceName;
+//	printf( "font '%S' %d pt\n", fontFaceName, fontPointSize );
 
 	// delete DC and font
 	::DeleteDC( hdc );
@@ -396,22 +420,23 @@ static INT_PTR CALLBACK messageDialogProc( HWND hwnd, UINT uMsg, WPARAM wParam, 
 	return FALSE;
 }
 
-static int textLengthAsDLUs( HDC hdc, LPCWSTR str, int strLen ) {
+static int textLengthAsDLUs( HDC hdc, LPCWSTR str, int strLen, LONG baseUnitX ) {
 	SIZE size{ 0 };
 	::GetTextExtentPoint32( hdc, str, (strLen >= 0) ? strLen : rt_wcslen( str ), &size );
-	return pixel2dluX( size.cx );
+//	printf( "textLengthAsDLUs: %d px   %d dlu   text: %d '%S'\n", size.cx, pixel2dluX( size.cx, baseUnitX ), strLen, str );
+	return pixel2dluX( size.cx, baseUnitX );
 }
 
-static LONG pixel2dluX( LONG px ) {
-	return MulDiv( px, 4, LOWORD( ::GetDialogBaseUnits() ) );
+static LONG pixel2dluX( LONG px, LONG baseUnitX ) {
+	return MulDiv( px, 4, baseUnitX );
 }
 
-static LONG pixel2dluY( LONG py ) {
-	return MulDiv( py, 8, HIWORD( ::GetDialogBaseUnits() ) );
+static LONG pixel2dluY( LONG py, LONG baseUnitY ) {
+	return MulDiv( py, 8, baseUnitY );
 }
 
-static LONG dluX2pixel( LONG dluX ) {
-	return MulDiv( dluX, LOWORD( ::GetDialogBaseUnits() ), 4 );
+static LONG dluX2pixel( LONG dluX, LONG baseUnitX ) {
+	return MulDiv( dluX, baseUnitX, 4 );
 }
 
 static LPWORD lpwAlign( LPWORD lpIn ) {

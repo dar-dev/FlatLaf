@@ -23,6 +23,8 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Insets;
 import java.awt.Rectangle;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.geom.Rectangle2D;
@@ -363,6 +365,30 @@ public class FlatTreeUI
 		Rectangle r = tree.getPathBounds( loc.getPath() );
 		if( r != null )
 			HiDPIUtils.repaint( tree, 0, r.y, tree.getWidth(), r.height );
+	}
+
+	@Override
+	protected FocusListener createFocusListener() {
+		return new BasicTreeUI.FocusHandler() {
+			@Override
+			public void focusGained( FocusEvent e ) {
+				super.focusGained( e );
+
+				// repaint necessary for active/inactive selection (super repaints single selection)
+				if( tree.getSelectionCount() > 1 )
+					tree.repaint();
+			}
+
+			@Override
+			public void focusLost( FocusEvent e ) {
+				super.focusLost( e );
+
+				// repaint necessary for active/inactive selection (super repaints single selection)
+				if( tree.getSelectionCount() > 1 )
+					tree.repaint();
+			}
+
+		};
 	}
 
 	@Override

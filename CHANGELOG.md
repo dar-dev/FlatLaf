@@ -7,6 +7,8 @@ FlatLaf Change Log
   - macOS: `Cmd+A` (**Select All**) did not work in file dialog. (issue #1084)
   - Block Swing input events (mouse, keyboard, etc.) while system file dialog is
     shown. (issue #1100)
+  - Windows: Fixed too small message dialogs (shown from approve callback).
+    (issue #1119)
 - macOS: Fixed missing close/iconify/maximize buttons on inactive window, if
   system appearance is dark, but application appearance is light. (issue #1032)
 - Linux with JetBrains Runtime: Fixed mouse "jumping" to other position when
@@ -14,8 +16,11 @@ FlatLaf Change Log
   (issue #1103)
 - TextComponents: Fixed preferred width when leading/trailing components or
   icons are present. (issue #1110)
+- Tree: Fixed repainting multi-selection when tree looses or gains focus. (issue
+  #1122)
 - JideTabbedPane: Support card tabs. (PR #1094)
-
+- Native libraries in Eclipse RCP: Fixed exception when runtime path contains
+  spaces. (issue #1102)
 
 ## 3.7.1
 

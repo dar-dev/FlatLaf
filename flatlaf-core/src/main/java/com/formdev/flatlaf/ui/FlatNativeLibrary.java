@@ -17,6 +17,7 @@
 package com.formdev.flatlaf.ui;
 
 import java.io.File;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.CodeSource;
 import com.formdev.flatlaf.FlatSystemProperties;
@@ -256,7 +257,15 @@ class FlatNativeLibrary
 			if( !"file".equals( jarUrl.getProtocol() ) )
 				return null;
 
-			File jarFile = new File( jarUrl.toURI() );
+			File jarFile;
+			try {
+				jarFile = new File( jarUrl.toURI() );
+			} catch( URISyntaxException ex ) {
+				// workaround for Eclipse, which does not encode special characters in URL
+				// (and returns invalid URL in that case)
+				// --> try URL path
+				jarFile = new File( jarUrl.getPath() );
+			}
 
 			// if jarFile is a directory, then we're in a development environment
 			if( !jarFile.isFile() )
