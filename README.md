@@ -189,131 +189,130 @@ Applications using FlatLaf
 
 ### Data
 
-- ![Hot](images/hot.svg) [Ultorg](https://www.ultorg.com/) (**commercial**) - a
-  visual query system for relational databases
-- [Jailer](https://github.com/Wisser/Jailer) - database subsetting and
-  relational data browsing tool
-- ![Hot](images/hot.svg) [MagicPlot](https://magicplot.com/) (**commercial**) -
-  Software for nonlinear fitting, plotting and data analysis
 - [Constellation](https://www.constellation-app.com/) - Data Visualization and
   Analytics (based on NetBeans platform)
+- [Jailer](https://github.com/Wisser/Jailer) - database subsetting and
+  relational data browsing tool
 - [Kafka Visualizer](https://github.com/kumait/kafkavisualizer) - Kafka GUI
   client
-- ![New](images/new.svg)
-  [RedisFront](https://github.com/dromara/RedisFront/blob/master/README_EN.md) -
+- ![Hot](images/hot.svg) [MagicPlot](https://magicplot.com/) (**commercial**) -
+  Software for nonlinear fitting, plotting and data analysis
+- [QStudio](https://www.timestored.com/qstudio/) - free SQL editor
+- [RedisFront](https://github.com/dromara/RedisFront/blob/master/README_EN.md) -
   Cross-platform redis GUI
-- ![New](images/new.svg)
-  [Zettelkasten](https://github.com/Zettelkasten-Team/Zettelkasten) - knowledge
+- ![Hot](images/hot.svg) [Ultorg](https://www.ultorg.com/) (**commercial**) - a
+  visual query system for relational databases
+- [Zettelkasten](https://github.com/Zettelkasten-Team/Zettelkasten) - knowledge
   management tool
-- ![New](images/new.svg) [QStudio](https://www.timestored.com/qstudio/) - free
-  SQL editor
 
 ### Security
 
-- ![Hot](images/hot.svg) [ZAP](https://www.zaproxy.org/) - the world's most
-  widely used web app scanner
-- ![Hot](images/hot.svg)
-  [Burp Suite Professional and Community Edition](https://portswigger.net/burp/pro)
+- [Burp Suite Professional and Community Edition](https://portswigger.net/burp/pro)
   (**commercial**) - the leading software for web security testing
+- [BurpCustomizer](https://github.com/CoreyD97/BurpCustomizer) - adds more
+  FlatLaf themes to Burp Suite
 - [Ghidra](https://github.com/NationalSecurityAgency/ghidra) - a software
   reverse engineering (SRE) framework
 - [jadx](https://github.com/skylot/jadx) - Dex to Java decompiler
-- [BurpCustomizer](https://github.com/CoreyD97/BurpCustomizer) - adds more
-  FlatLaf themes to Burp Suite
-- [Total Validator](https://www.totalvalidator.com/) (**commercial**) - checks
-  your website
 - [JPass](https://github.com/gaborbata/jpass) - password manager with strong
   encryption
+- [Total Validator](https://www.totalvalidator.com/) (**commercial**) - checks
+  your website
+- ![Hot](images/hot.svg) [ZAP](https://www.zaproxy.org/) - the world's most
+  widely used web app scanner
 
 ### Software Development
 
-- [jclasslib bytecode viewer](https://github.com/ingokegel/jclasslib)
-- [KeyStore Explorer](https://keystore-explorer.org/)
-- [muCommander](https://github.com/mucommander/mucommander) - lightweight
-  cross-platform file manager
+- [Consulo](https://github.com/consulo/consulo) - open source cross-platform
+  multi-language IDE (Java, .NET, JS, etc)
+- [Convertigo](https://github.com/convertigo/convertigo) - low code & no code
+  mobile & web platform
+- ![New](images/new.svg)
+  [EasyPostman](https://github.com/lakernote/easy-postman) - API debugging and
+  stress testing
+- [EduMIPS64](https://github.com/EduMIPS64/edumips64) - visual MIPS64 CPU
+  simulator
 - [Guiffy](https://www.guiffy.com/) (**commercial**) - advanced cross-platform
   Diff/Merge
 - [HashGarten](https://github.com/jonelo/HashGarten) - cross-platform Swing GUI
   for Jacksum
-- [Pseudo Assembler IDE](https://github.com/tomasz-herman/PseudoAssemblerIDE) -
-  IDE for Pseudo-Assembler
+- ![Hot](images/hot.svg)
+  [jclasslib bytecode viewer](https://github.com/ingokegel/jclasslib)
+- ![Hot](images/hot.svg) [KeyStore Explorer](https://keystore-explorer.org/)
+- [Launch4j](https://launch4j.sourceforge.net/) - cross-platform Java executable
+  wrapper
 - [Linotte](https://github.com/cpc6128/LangageLinotte) - French programming
   language created to learn programming
 - [lsfusion platform](https://github.com/lsfusion/platform) - information
   systems development platform
-- ![New](images/new.svg) [Consulo](https://github.com/consulo/consulo) - open
-  source cross-platform multi-language IDE (Java, .NET, JS, etc)
-- [Convertigo](https://github.com/convertigo/convertigo) - low code & no code
-  mobile & web platform
-- ![New](images/new.svg) [EduMIPS64](https://github.com/EduMIPS64/edumips64) -
-  visual MIPS64 CPU simulator
-- ![New](images/new.svg) [Launch4j](https://launch4j.sourceforge.net/) -
-  cross-platform Java executable wrapper
+- [muCommander](https://github.com/mucommander/mucommander) - lightweight
+  cross-platform file manager
+- [Pseudo Assembler IDE](https://github.com/tomasz-herman/PseudoAssemblerIDE) -
+  IDE for Pseudo-Assembler
+- ![New](images/new.svg) [Sierra](https://github.com/HTTP-RPC/Sierra) -
+  declarative UI for Java
 
 ### Electrical
 
 - [Antares](https://www.antarescircuit.io/) - a free, powerful platform for
   designing, simulating and explaining digital circuits
-- [Logisim-evolution](https://github.com/logisim-evolution/logisim-evolution) -
-  Digital logic design tool and simulator
-- ![New](images/new.svg) [OpenPnP](https://github.com/openpnp/openpnp) - SMT
-  Pick and Place Hardware and Software
-- ![New](images/new.svg)
-  [TrainControl](https://github.com/bob123456678/TrainControl) - control Marklin
-  / Trix / DCC digital model train layout
-- [Makelangelo Software](https://github.com/MarginallyClever/Makelangelo-software) -
-  for plotters, especially the wall-hanging polargraph
 - [GUIslice Builder](https://github.com/ImpulseAdventure/GUIslice-Builder) - GUI
   builder for [GUIslice](https://github.com/ImpulseAdventure/GUIslice), a
   lightweight GUI framework for embedded displays
-- [ThunderFocus](https://github.com/marcocipriani01/ThunderFocus) -
-  Arduino-based telescope focuser
+- [Logisim-evolution](https://github.com/logisim-evolution/logisim-evolution) -
+  Digital logic design tool and simulator
+- [Makelangelo Software](https://github.com/MarginallyClever/Makelangelo-software) -
+  for plotters, especially the wall-hanging polargraph
+- [OpenPnP](https://github.com/openpnp/openpnp) - SMT Pick and Place Hardware
+  and Software
 - [RemoteLight](https://github.com/Drumber/RemoteLight) - multifunctional LED
   control software
+- [ThunderFocus](https://github.com/marcocipriani01/ThunderFocus) -
+  Arduino-based telescope focuser
+- [TrainControl](https://github.com/bob123456678/TrainControl) - control Marklin
+  / Trix / DCC digital model train layout
 
 ### Media
 
-- ![Hot](images/hot.svg) [jAlbum](https://jalbum.net/) (**commercial**) -
-  creates photo album websites
-- [MediathekView](https://mediathekview.de/) - search in media libraries of
-  various German broadcasters
-- ![New](images/new.svg) [Pixelitor](https://github.com/lbalazscs/Pixelitor) -
-  image editor
 - [Cinecred](https://loadingbyte.com/cinecred/) - create beautiful film credit
   sequences
-- [tinyMediaManager](https://www.tinymediamanager.org/) (**commercial**) - a
-  media management tool
-- [Weasis](https://nroduit.github.io/) - medical DICOM viewer used in healthcare
-  by hospitals, health networks, etc
+- ![Hot](images/hot.svg) [jAlbum](https://jalbum.net/) (**commercial**) -
+  creates photo album websites
+- [lectureStudio](https://www.lecturestudio.org/) - digitize your lectures with
+  ease
+- [MediathekView](https://mediathekview.de/) - search in media libraries of
+  various German broadcasters
+- [Nortantis](https://jandjheydorn.com/nortantis) - fantasy map generator and
+  editor
+- [Novel-Grabber](https://github.com/Flameish/Novel-Grabber) - download novels
+  from any webnovel and lightnovel site
+- [Pixelitor](https://github.com/lbalazscs/Pixelitor) - image editor
 - [Shutter Encoder](https://www.shutterencoder.com/)
   ([source code](https://github.com/paulpacifico/shutter-encoder)) -
   professional video converter and compression tool
 - [Sound Analysis](https://github.com/tomasz-herman/SoundAnalysis) - analyze
   sound files in time or frequency domain
-- [Novel-Grabber](https://github.com/Flameish/Novel-Grabber) - download novels
-  from any webnovel and lightnovel site
-- [lectureStudio](https://www.lecturestudio.org/) - digitize your lectures with
-  ease
-- ![New](images/new.svg) [Nortantis](https://jandjheydorn.com/nortantis) -
-  fantasy map generator and editor
+- [tinyMediaManager](https://www.tinymediamanager.org/) (**commercial**) - a
+  media management tool
+- [Weasis](https://nroduit.github.io/) - medical DICOM viewer used in healthcare
+  by hospitals, health networks, etc
 
 ### Modelling / Planning
 
-- ![New](images/new.svg) [OpenRocket](https://github.com/openrocket/openrocket) -
-  model-rocketry aerodynamics and trajectory simulation software
-- ![New](images/new.svg)
-  [Warteschlangensimulator](https://github.com/A-Herzog/Warteschlangensimulator) -
-  discrete-event stochastic simulator
-- ![New](images/new.svg) [Gephi](https://github.com/gephi/gephi) - the Open
-  Graph Viz Platform
 - [Astah](https://astah.net/) (**commercial**) - create UML, ER Diagram,
   Flowchart, Data Flow Diagram, Requirement Diagram, SysML diagrams and more
+- ![Hot](images/hot.svg) [Gephi](https://github.com/gephi/gephi) - the Open
+  Graph Viz Platform
 - [IGMAS+](https://www.gfz-potsdam.de/igmas) - Interactive Gravity and Magnetic
   Application System
-- ![New](images/new.svg) [StarPlan](https://www.progotec.de/) (**commercial**) -
-  die Stundenplan Software für Bildungseinrichtungen
-- ![New](images/new.svg) [SSPlot](https://github.com/babaissarkar/ssplot) -
-  plotting utility for plotting CSV data
+- ![Hot](images/hot.svg) [OpenRocket](https://github.com/openrocket/openrocket) -
+  model-rocketry aerodynamics and trajectory simulation software
+- [SSPlot](https://github.com/babaissarkar/ssplot) - plotting utility for
+  plotting CSV data
+- [StarPlan](https://www.progotec.de/) (**commercial**) - die Stundenplan
+  Software für Bildungseinrichtungen
+- [Warteschlangensimulator](https://github.com/A-Herzog/Warteschlangensimulator) -
+  discrete-event stochastic simulator
 
 ### Documents
 
@@ -336,16 +335,15 @@ Applications using FlatLaf
 
 ### Business / Legal
 
-- ![New](images/new.svg) ![Sponsor](images/sponsor.svg)
-  [Lisheane ERP](https://www.lisheane.ch/) (**commercial**) - backoffice
-  applikation
-- ![Sponsor](images/sponsor.svg)
-  [j-lawyer](https://github.com/jlawyerorg/j-lawyer-org) - Kanzleisoftware
-- ![Sponsor](images/sponsor.svg) [Jeyla Studio](https://www.jeylastudio.com/) -
-  Salon Software
 - [Fanurio](https://www.fanuriotimetracking.com/) (**commercial**) - time
   tracking and billing for freelancers and teams
 - [Jes](https://www.jes-eur.de) - Die Java-EÜR
+- ![Sponsor](images/sponsor.svg) [Jeyla Studio](https://www.jeylastudio.com/) -
+  Salon Software
+- ![Sponsor](images/sponsor.svg)
+  [j-lawyer](https://github.com/jlawyerorg/j-lawyer-org) - Kanzleisoftware
+- ![Sponsor](images/sponsor.svg) [Lisheane ERP](https://www.lisheane.ch/)
+  (**commercial**) - backoffice applikation
 - [mendelson AS2](https://sourceforge.net/projects/mec-as2/),
   [AS4](https://sourceforge.net/projects/mendelson-as4/) and
   [OFTP2](https://sourceforge.net/projects/mendelson-oftp2/) (open-source) and
@@ -355,42 +353,43 @@ Applications using FlatLaf
 
 ### Messaging
 
+- [Chatty](https://github.com/chatty/chatty) - Twitch Chat Client
 - [Spark](https://github.com/igniterealtime/Spark) - cross-platform IM client
   optimized for businesses and organizations
-- [Chatty](https://github.com/chatty/chatty) - Twitch Chat Client
 
 ### Gaming
 
 - ![Sponsor](images/sponsor.svg) [BGBlitz](https://www.bgblitz.com/)
   (**commercial**) - professional Backgammon
-- ![New](images/new.svg) [josé](https://peteschaefer.github.io/jose/) - a
-  graphical chess tool
-- ![New](images/new.svg) [MCreator](https://github.com/MCreator/MCreator) - make
-  Minecraft Java Edition mods, Minecraft Bedrock Edition Add-Ons, and data packs
+- [ControllerBuddy](https://github.com/bwRavencl/ControllerBuddy) - advanced
+  gamepad mapping software
+- [josé](https://peteschaefer.github.io/jose/) - a graphical chess tool
 - [MapTool](https://github.com/RPTools/maptool) - virtual Tabletop for playing
   role-playing games
+- [MCreator](https://github.com/MCreator/MCreator) - make Minecraft Java Edition
+  mods, Minecraft Bedrock Edition Add-Ons, and data packs
 - [MegaMek](https://github.com/MegaMek/megamek),
   [MegaMekLab](https://github.com/MegaMek/megameklab) and
   [MekHQ](https://github.com/MegaMek/mekhq) - a sci-fi tabletop BattleTech
   simulator suite handling battles, unit building, and campaigns
-- [ControllerBuddy](https://github.com/bwRavencl/ControllerBuddy) - advanced
-  gamepad mapping software
 
 ### Utilities
 
-- [MooInfo](https://github.com/rememberber/MooInfo) - visual implementation of
-  OSHI, to view information about the system and hardware
+- [Android Tool](https://github.com/fast-geek/Android-Tool) - makes popular adb
+  and fastboot commands easier to use
+- [jEnTunnel](https://github.com/ggrandes/jentunnel) - manage SSH Tunnels made
+  easy
 - [Linux Task Manager (LTM)](https://github.com/ajee10x/LTM-LinuxTaskManager) -
   GUI for monitoring and managing various aspects of a Linux system
+- [MooInfo](https://github.com/rememberber/MooInfo) - visual implementation of
+  OSHI, to view information about the system and hardware
+- ![New](images/new.svg) [QTranslate](https://github.com/ahatem/QTranslate) -
+  desktop translation suite (translation, OCR, TTS, spell-checking)
 - [Rest Suite](https://github.com/supanadit/restsuite) - Rest API testing
 - [SpringRemote](https://github.com/HaleyWang/SpringRemote) - remote Linux SSH
   connections manager
-- [jEnTunnel](https://github.com/ggrandes/jentunnel) - manage SSH Tunnels made
-  easy
-- [Android Tool](https://github.com/fast-geek/Android-Tool) - makes popular adb
-  and fastboot commands easier to use
-- ![New](images/new.svg) [Termora](https://github.com/TermoraDev/termora) -
-  Terminal emulator and SSH client
+- [Termora](https://github.com/TermoraDev/termora) - Terminal emulator and SSH
+  client
 
 ### Miscellaneous
 
