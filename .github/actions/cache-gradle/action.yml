@@ -16,14 +16,14 @@ runs:
   steps:
 
     - name: Cache '.gradle/wrapper'
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         key: gradle-wrapper-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles( 'gradle/wrapper/gradle-wrapper.properties' ) }}
         path: |
           ~/.gradle/wrapper
 
     - name: Cache '.gradle/caches' and 'buildSrc/build'
-      uses: actions/cache@v4
+      uses: actions/cache@v6
       with:
         key: gradle-caches-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles( '**/*.gradle*', 'gradle/**', 'gradle.properties', 'buildSrc/src/**' ) }}
         path: |
