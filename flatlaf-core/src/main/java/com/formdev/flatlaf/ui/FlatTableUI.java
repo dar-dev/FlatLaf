@@ -530,7 +530,7 @@ public class FlatTableUI
 		}
 
 		// rounded selection or selection insets
-		if( selectionArc > 0 || (selectionInsets != null && !FlatUIUtils.isInsetsEmpty( selectionInsets )) )
+		if( (selectionArc > 0 || (selectionInsets != null && !FlatUIUtils.isInsetsEmpty( selectionInsets ))) && !isFileList( table ) )
 			g = new RoundedSelectionGraphics( g, UIManager.getColor( "Table.alternateRowColor" ) );
 
 		super.paint( g, c );
@@ -585,13 +585,18 @@ public class FlatTableUI
 			if( tableHeight < viewportHeight ) {
 				int tableWidth = table.getWidth();
 				int rowHeight = table.getRowHeight();
+				boolean isFileList = isFileList( table );
 
 				g.setColor( alternateColor );
 
 				int x = viewport.getComponentOrientation().isLeftToRight() ? 0 : viewportWidth - tableWidth;
 				for( int y = tableHeight, row = rowCount; y < viewportHeight; y += rowHeight, row++ ) {
-					if( row % 2 != 0 )
-						paintAlternateRowBackground( g, -1, -1, x, y, tableWidth, rowHeight );
+					if( row % 2 != 0 ) {
+						if( !isFileList )
+							paintAlternateRowBackground( g, -1, -1, x, y, tableWidth, rowHeight );
+						else
+							g.fillRect( x, y, tableWidth, rowHeight );
+					}
 				}
 
 				// add listener on demand
@@ -789,6 +794,10 @@ public class FlatTableUI
 		Rectangle firstRect = table.getCellRect( firstRow, firstColumn, false );
 		Rectangle lastRect = table.getCellRect( lastRow, lastColumn, false );
 		table.repaint( firstRect.union( lastRect ) );
+	}
+
+	static boolean isFileList( JTable table ) {
+		return Boolean.TRUE.equals( table.getClientProperty( "Table.isFileList" ) );
 	}
 
 	//---- class RoundedSelectionGraphics -------------------------------------

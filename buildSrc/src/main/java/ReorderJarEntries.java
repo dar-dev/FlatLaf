@@ -42,11 +42,15 @@ public class ReorderJarEntries
 		ByteArrayOutputStream outStream = new ByteArrayOutputStream( (int) jarFile.length() + 1000 );
 
 		try( ZipOutputStream zipOutStream = new ZipOutputStream( outStream ) ) {
-			// 1st pass: copy .properties files
+			// 1st pass: copy manifest, which must stay first so that JarInputStream can read it
+			Predicate<String> manifestFilter = name -> name.equals( "META-INF/" ) || name.equals( "META-INF/MANIFEST.MF" );
+			copyFiles( zipOutStream, jarFile, manifestFilter );
+
+			// 2nd pass: copy .properties files
 			copyFiles( zipOutStream, jarFile, name -> name.endsWith( ".properties" ) );
 
-			// 2nd pass: copy other files
-			copyFiles( zipOutStream, jarFile, name -> !name.endsWith( ".properties" ) );
+			// 3rd pass: copy other files
+			copyFiles( zipOutStream, jarFile, name -> !name.endsWith( ".properties" ) && !manifestFilter.test( name ) );
 		}
 
 		// replace JAR

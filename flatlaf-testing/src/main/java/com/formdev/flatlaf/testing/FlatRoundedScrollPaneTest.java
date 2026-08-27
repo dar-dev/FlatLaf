@@ -63,7 +63,7 @@ public class FlatRoundedScrollPaneTest
 		};
 
 		ArrayList<String> items = new ArrayList<>();
-		for( char ch = '0'; ch < 'z'; ch++ ) {
+		for( char ch = '0'; ch < 'J'; ch++ ) {
 			if( (ch > '9' && ch < 'A') || (ch > 'Z' && ch < 'a') )
 				continue;
 

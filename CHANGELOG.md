@@ -1,6 +1,21 @@
 FlatLaf Change Log
 ==================
 
+## 3.8-SNAPSHOT
+
+#### Fixed bugs
+
+- FileChooser:
+  - Fixed selection painting in "Details" view when theme uses rounded
+    selection. (issue #1137)
+  - Directory combobox did not have rounded border. (issue #957)
+- ScrollPane: When using rounded border and scrollpane width was near view
+  width, then the horizontal scrollbar was shown even when it was not necessary.
+  (issue #1135)
+- Make sure that `META-INF/MANIFEST.MF` is first jar entry, so that tools that
+  use `JarInputStream` readers see `Multi-Release: true`. (issue #1139)
+
+
 ## 3.7.2
 
 - System File Chooser:

@@ -51,7 +51,10 @@ import java.util.WeakHashMap;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import javax.swing.Icon;
+import javax.swing.JComboBox;
 import javax.swing.JComponent;
+import javax.swing.JFileChooser;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
@@ -323,8 +326,17 @@ public class FlatUIUtils
 		if( c == null )
 			return false;
 
-		// check whether used as table cell editor
 		Container parent = c.getParent();
+
+		// special case for directory combobox in file chooser,
+		// which has client property "JComboBox.isTableCellEditor" set to true
+		if( c instanceof JComboBox &&
+			parent instanceof JPanel &&
+			parent.getParent() instanceof JPanel &&
+			parent.getParent().getParent() instanceof JFileChooser )
+		  return false;
+
+		// check whether used as table cell editor
 		if( parent instanceof JTable && ((JTable)parent).getEditorComponent() == c )
 			return true;
 

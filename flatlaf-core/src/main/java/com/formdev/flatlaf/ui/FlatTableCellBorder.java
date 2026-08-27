@@ -67,7 +67,7 @@ public class FlatTableCellBorder
 
 	@Override
 	public int getArc() {
-		if( c != null ) {
+		if( c != null && !isFileList( c ) ) {
 			Integer selectionArc = getStyleFromTableUI( c, ui -> ui.selectionArc );
 			if( selectionArc != null )
 				return selectionArc;
@@ -77,7 +77,7 @@ public class FlatTableCellBorder
 
 	@Override
 	public void paintBorder( Component c, Graphics g, int x, int y, int width, int height ) {
-		if( c != null ) {
+		if( c != null && !isFileList( c ) ) {
 			Insets selectionInsets = getStyleFromTableUI( c, ui -> ui.selectionInsets );
 			if( selectionInsets != null ) {
 				x += selectionInsets.left;
@@ -104,6 +104,11 @@ public class FlatTableCellBorder
 				return f.apply( (FlatTableUI) ui );
 		}
 		return null;
+	}
+
+	private static boolean isFileList( Component c ) {
+		JTable table = (JTable) SwingUtilities.getAncestorOfClass( JTable.class, c );
+		return table != null && FlatTableUI.isFileList( table );
 	}
 
 	//---- class Default ------------------------------------------------------
