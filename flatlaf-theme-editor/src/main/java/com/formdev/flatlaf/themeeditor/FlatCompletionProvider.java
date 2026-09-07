@@ -43,6 +43,7 @@ import org.fife.ui.autocomplete.ParameterizedCompletion;
 import org.fife.ui.autocomplete.ParameterizedCompletion.Parameter;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import com.formdev.flatlaf.FlatLaf;
+import com.formdev.flatlaf.util.StringUtils;
 
 /**
  * @author Karl Tauber
@@ -405,6 +406,8 @@ class FlatCompletionProvider
 		extends BaseCompletionProvider
 		implements ParameterChoicesProvider
 	{
+		private static final String OPTIONAL = "(optional) ";
+
 		ValueCompletionProvider( CompletionProvider parent ) {
 			setParent( parent );
 			setAutoActivationRules( true, null );
@@ -446,7 +449,7 @@ class FlatCompletionProvider
 			String[] hslIncreaseDecreaseParams = {
 				"color", colorParamDesc,
 				"amount", "0-100%",
-				"options", "(optional) [relative] [autoInverse] [noAutoInverse] [lazy] [derived]"
+				"options", OPTIONAL + "[relative] [autoInverse] [noAutoInverse] [lazy] [derived]"
 			};
 			addFunction( "lighten", hslIncreaseDecreaseParams );
 			addFunction( "darken", hslIncreaseDecreaseParams );
@@ -458,42 +461,45 @@ class FlatCompletionProvider
 			addFunction( "fade",
 				"color", colorParamDesc,
 				"amount", "0-100%",
-				"options", "(optional) [derived]" );
+				"options", OPTIONAL + "[derived]" );
 			addFunction( "spin",
 				"color", colorParamDesc,
 				"angle", "number of degrees to rotate (0-360)",
-				"options", "(optional) [derived]" );
+				"options", OPTIONAL + "[derived]" );
 
 			addFunction( "changeHue",
 				"color", colorParamDesc,
 				"angle", "number of degrees (0-360)",
-				"options", "(optional) [derived]" );
+				"options", OPTIONAL + "[derived]" );
 			String[] hslChangeParams = {
 				"color", colorParamDesc,
 				"value", "0-100%",
-				"options", "(optional) [derived]"
+				"options", OPTIONAL + "[derived]"
 			};
 			addFunction( "changeSaturation", hslChangeParams );
 			addFunction( "changeLightness", hslChangeParams );
 			addFunction( "changeAlpha", hslChangeParams );
 
-			String weightParamDesc = "(optional) 0-100%, default is 50%";
+			String weightParamDesc = OPTIONAL + "0-100%, default is 50%";
 			addFunction( "mix",
 				"color1", colorParamDesc,
 				"color2", colorParamDesc,
-				"weight", weightParamDesc );
+				"weight", weightParamDesc,
+				"options", OPTIONAL + "[rgb|lrgb|oklab] [derived] [lazy]" );
 			addFunction( "tint",
 				"color", colorParamDesc,
-				"weight", weightParamDesc );
+				"weight", weightParamDesc,
+				"options", OPTIONAL + "[rgb|lrgb|oklab] [derived] [lazy]" );
 			addFunction( "shade",
 				"color", colorParamDesc,
-				"weight", weightParamDesc );
+				"weight", weightParamDesc,
+				"options", OPTIONAL + "[rgb|lrgb|oklab] [derived] [lazy]" );
 
 			addFunction( "contrast",
 				"color", colorParamDesc,
 				"dark", colorParamDesc,
 				"light", colorParamDesc,
-				"threshold", "(optional) 0-100%, default is 43%" );
+				"threshold", OPTIONAL + "0-100%, default is 43%" );
 
 			addFunction( "over",
 				"foreground", colorParamDesc,
@@ -526,10 +532,13 @@ class FlatCompletionProvider
 		public List<Completion> getParameterChoices( JTextComponent tc, Parameter param ) {
 			switch( param.getName() ) {
 				case "amount":
+				case "weight":
 					return createParameterChoices( "5%", "10%", "15%", "20%", "25%" );
 
 				case "options":
-					return createParameterChoices( "relative", "autoInverse", "noAutoInverse", "lazy", "derived" );
+					String description = param.getDescription();
+					description = StringUtils.removeLeading( description, OPTIONAL );
+					return createParameterChoices( description.split( "[ \\[\\]\\|]" ) );
 			}
 
 			return null;
@@ -537,8 +546,11 @@ class FlatCompletionProvider
 
 		private List<Completion> createParameterChoices( String... values ) {
 			List<Completion> result = new ArrayList<>();
-			for( String value : values )
-				result.add( new BasicCompletion( this, value ) );
+			for( String value : values ) {
+				value = value.trim();
+				if( !value.isEmpty() )
+					result.add( new BasicCompletion( this, value ) );
+			}
 			return result;
 		}
 	}

@@ -3,6 +3,12 @@ FlatLaf Change Log
 
 ## 3.8-SNAPSHOT
 
+#### New features and improvements
+
+- Added support for [Oklab](https://bottosson.github.io/posts/oklab/) and linear sRGB
+  color spaces to color functions `mix()`, `tint()` and `shade()`. (PR #1132, issue #1109)
+- Theme Editor: Added preview for color functions. (see PR #1132)
+
 #### Fixed bugs
 
 - FileChooser:
@@ -14,6 +20,8 @@ FlatLaf Change Log
   (issue #1135)
 - Make sure that `META-INF/MANIFEST.MF` is first jar entry, so that tools that
   use `JarInputStream` readers see `Multi-Release: true`. (issue #1139)
+- Extras:
+  - `FlatSVGIcon`: Fixed wrong color when SVG uses `fill="currentColor"`. (issue #1144)
 
 
 ## 3.7.2

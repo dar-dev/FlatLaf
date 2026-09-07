@@ -1,0 +1,98 @@
+JFDML JFormDesigner: "8.3" encoding: "UTF-8"
+
+new FormModel {
+	contentType: "form/swing"
+	root: new FormRoot {
+		add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class net.miginfocom.swing.MigLayout ) {
+			"$layoutConstraints": "hidemode 3"
+			"$columnConstraints": "[grow,fill]"
+			"$rowConstraints": "[][]"
+		} ) {
+			name: "this"
+			add( new FormContainer( "javax.swing.JPanel", new FormLayoutManager( class net.miginfocom.swing.MigLayout ) {
+				"$layoutConstraints": "fillx,insets 0,hidemode 3"
+				"$columnConstraints": "[grow,sizegroup 1,fill]0[grow,sizegroup 1,fill]0[grow,sizegroup 1,fill]"
+				"$rowConstraints": "[][]0[]0[30,fill]"
+			} ) {
+				name: "previewPanel"
+				auxiliary() {
+					"JavaCodeGenerator.variableLocal": true
+				}
+				add( new FormComponent( "javax.swing.JLabel" ) {
+					name: "functionLabel"
+					"text": "text"
+					"$client.FlatLaf.styleClass": "h3"
+				}, new FormLayoutConstraints( class net.miginfocom.layout.CC ) {
+					"value": "cell 0 0 3 1,wmax 100%"
+				} )
+				add( new FormComponent( "javax.swing.JLabel" ) {
+					name: "color1HSLLabel"
+					"text": "text"
+				}, new FormLayoutConstraints( class net.miginfocom.layout.CC ) {
+					"value": "cell 0 1,wmax 33%"
+				} )
+				add( new FormComponent( "javax.swing.JLabel" ) {
+					name: "newColorHSLLabel"
+					"text": "text"
+				}, new FormLayoutConstraints( class net.miginfocom.layout.CC ) {
+					"value": "cell 1 1,wmax 33%"
+				} )
+				add( new FormComponent( "javax.swing.JLabel" ) {
+					name: "color2HSLLabel"
+					"text": "text"
+				}, new FormLayoutConstraints( class net.miginfocom.layout.CC ) {
+					"value": "cell 2 1,wmax 33%"
+				} )
+				add( new FormComponent( "javax.swing.JLabel" ) {
+					name: "color1RGBLabel"
+					"text": "text"
+				}, new FormLayoutConstraints( class net.miginfocom.layout.CC ) {
+					"value": "cell 0 2,wmax 33%"
+				} )
+				add( new FormComponent( "javax.swing.JLabel" ) {
+					name: "newColorRGBLabel"
+					"text": "text"
+				}, new FormLayoutConstraints( class net.miginfocom.layout.CC ) {
+					"value": "cell 1 2,wmax 33%"
+				} )
+				add( new FormComponent( "javax.swing.JLabel" ) {
+					name: "color2RGBLabel"
+					"text": "text"
+				}, new FormLayoutConstraints( class net.miginfocom.layout.CC ) {
+					"value": "cell 2 2,wmax 33%"
+				} )
+				add( new FormComponent( "com.formdev.flatlaf.themeeditor.FlatColorFunctionPreview$Preview" ) {
+					name: "color1Preview"
+					"background": sfield java.awt.Color red
+					"horizontalAlignment": 0
+				}, new FormLayoutConstraints( class net.miginfocom.layout.CC ) {
+					"value": "cell 0 3,width 33%"
+				} )
+				add( new FormComponent( "com.formdev.flatlaf.themeeditor.FlatColorFunctionPreview$Preview" ) {
+					name: "newColorPreview"
+					"background": sfield java.awt.Color blue
+					"horizontalAlignment": 0
+				}, new FormLayoutConstraints( class net.miginfocom.layout.CC ) {
+					"value": "cell 1 3,width 33%"
+				} )
+				add( new FormComponent( "com.formdev.flatlaf.themeeditor.FlatColorFunctionPreview$Preview" ) {
+					name: "color2Preview"
+					"background": sfield java.awt.Color green
+					"horizontalAlignment": 0
+				}, new FormLayoutConstraints( class net.miginfocom.layout.CC ) {
+					"value": "cell 2 3,width 33%"
+				} )
+			}, new FormLayoutConstraints( class net.miginfocom.layout.CC ) {
+				"value": "cell 0 0"
+			} )
+			add( new FormComponent( "com.formdev.flatlaf.themeeditor.FlatColorFunctionPreview$GradientPreview" ) {
+				name: "gradientPreview"
+			}, new FormLayoutConstraints( class net.miginfocom.layout.CC ) {
+				"value": "cell 0 1"
+			} )
+		}, new FormLayoutConstraints( null ) {
+			"location": new java.awt.Point( 0, 0 )
+			"size": new java.awt.Dimension( 400, 300 )
+		} )
+	}
+}

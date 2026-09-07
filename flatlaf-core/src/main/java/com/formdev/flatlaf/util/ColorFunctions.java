@@ -26,6 +26,27 @@ import java.awt.Color;
 public class ColorFunctions
 {
 	/**
+	 * sRGB color space.
+	 *
+	 * @since 3.8
+	 */
+	public static final int RGB = 0;
+
+	/**
+	 * Linear-light sRGB color space.
+	 *
+	 * @since 3.8
+	 */
+	public static final int LRGB = 1;
+
+	/**
+	 * <a href="https://bottosson.github.io/posts/oklab/">Oklab</a> color space.
+	 *
+	 * @since 3.8
+	 */
+	public static final int OKLAB = 2;
+
+	/**
 	 * Increase the lightness of a color in HSL color space by an absolute amount.
 	 * <p>
 	 * Consider using {@link #tint(Color, float)} as alternative.
@@ -120,6 +141,8 @@ public class ColorFunctions
 
 	/**
 	 * Returns a color that is a mixture of two colors.
+	 * Uses {@link #RGB} interpolation method.
+	 * For better results use {@link #OKLAB} or {@link #LRGB} and {@link #mix(Color, Color, float, int)}.
 	 * <p>
 	 * This can be used to animate a color change from {@code color1} to {@code color2}
 	 * by invoking this method multiple times with decreasing {@code weight} (from 1 to 0).
@@ -132,6 +155,27 @@ public class ColorFunctions
 	 * @return mixture of colors
 	 */
 	public static Color mix( Color color1, Color color2, float weight ) {
+		return mix( color1, color2, weight, RGB );
+	}
+
+	/**
+	 * Returns a color that is a mixture of two colors, using give interpolation method.
+	 * For best results use {@link #OKLAB} or {@link #LRGB}.
+	 * <p>
+	 * This can be used to animate a color change from {@code color1} to {@code color2}
+	 * by invoking this method multiple times with decreasing {@code weight} (from 1 to 0).
+	 *
+	 * @param color1 first color
+	 * @param color2 second color
+	 * @param weight the weight of first color (in range 0-1), used to mix the two colors.
+	 *               Weight of second color is {@code 1-weight}.
+	 *               Larger weight uses more of first color, smaller weight more of second color.
+	 * @param method interpolation method used to mix the colors:
+	 *               {@link #RGB}, {@link #LRGB} or {@link #OKLAB}
+	 * @return mixture of colors
+	 * @since 3.8
+	 */
+	public static Color mix( Color color1, Color color2, float weight, int method ) {
 		if( weight >= 1 )
 			return color1;
 		if( weight <= 0 )
@@ -139,30 +183,60 @@ public class ColorFunctions
 		if( color1.equals( color2 ) )
 			return color1;
 
-		int r1 = color1.getRed();
-		int g1 = color1.getGreen();
-		int b1 = color1.getBlue();
-		int a1 = color1.getAlpha();
+		switch( method ) {
+			case RGB:			return mixRGB( color1, color2, weight );
+			case LRGB:			return mixLinearRGB( color1, color2, weight );
+			case OKLAB:			return mixOklab( color1, color2, weight );
+			default:			throw new IllegalArgumentException();
+		}
+	}
 
-		int r2 = color2.getRed();
-		int g2 = color2.getGreen();
-		int b2 = color2.getBlue();
-		int a2 = color2.getAlpha();
-
+	private static Color mixRGB( Color color1, Color color2, float weight ) {
 		return new Color(
-			Math.round( r2 + ((r1 - r2) * weight) ),
-			Math.round( g2 + ((g1 - g2) * weight) ),
-			Math.round( b2 + ((b1 - b2) * weight) ),
-			Math.round( a2 + ((a1 - a2) * weight) ) );
+			Math.round( lerp( color1.getRed(),   color2.getRed(),   weight ) ),
+			Math.round( lerp( color1.getGreen(), color2.getGreen(), weight ) ),
+			Math.round( lerp( color1.getBlue(),  color2.getBlue(),  weight ) ),
+			Math.round( lerp( color1.getAlpha(), color2.getAlpha(), weight ) ) );
+	}
+
+	private static Color mixLinearRGB( Color color1, Color color2, float weight ) {
+		float[] lrgb1 = toLinearRGB( color1 );
+		float[] lrgb2 = toLinearRGB( color2 );
+
+		return fromLinearRGB( new float[] {
+			lerp( lrgb1[0], lrgb2[0], weight ),
+			lerp( lrgb1[1], lrgb2[1], weight ),
+			lerp( lrgb1[2], lrgb2[2], weight ),
+			lerp( lrgb1[3], lrgb2[3], weight ),
+		} );
+	}
+
+	private static Color mixOklab( Color color1, Color color2, float weight ) {
+		float[] oklab1 = toOklab( color1 );
+		float[] oklab2 = toOklab( color2 );
+
+		return fromOklab( new float[] {
+			lerp( oklab1[0], oklab2[0], weight ),
+			lerp( oklab1[1], oklab2[1], weight ),
+			lerp( oklab1[2], oklab2[2], weight ),
+			lerp( oklab1[3], oklab2[3], weight ),
+		} );
+	}
+
+	private static float lerp( float value1, float value2, float weight ) {
+		return value2 + ((value1 - value2) * weight);
 	}
 
 	/**
-	 * Mix color with white, which makes the color brighter.
+	 * Mix color with white, which makes the color lighter.
 	 * This is the same as {@link #mix}{@code (Color.white, color, weight)}.
+	 * Uses {@link #RGB} interpolation method.
+	 * For better results use {@link #OKLAB} or {@link #LRGB} and {@link #tint(Color, float, int)}.
 	 *
-	 * @param color second color
-	 * @param weight the weight (in range 0-1) to mix the two colors.
-	 *               Larger weight uses more of first color, smaller weight more of second color.
+	 * @param color color to mix with white
+	 * @param weight the weight of white (in range 0-1), used to mix the two colors.
+	 *               Weight of given color is {@code 1-weight}.
+	 *               Larger weight uses more of white, smaller weight more of given color.
 	 * @return mixture of colors
 	 * @since 2
 	 */
@@ -171,17 +245,56 @@ public class ColorFunctions
 	}
 
 	/**
+	 * Mix color with white, which makes the color lighter.
+	 * This is the same as {@link #mix}{@code (Color.white, color, weight)}.
+	 * For best results use {@link #OKLAB} or {@link #LRGB}.
+	 *
+	 * @param color color to mix with white
+	 * @param weight the weight of white (in range 0-1), used to mix the two colors.
+	 *               Weight of given color is {@code 1-weight}.
+	 *               Larger weight uses more of white, smaller weight more of given color.
+	 * @param method interpolation method used to mix the colors:
+	 *               {@link #RGB}, {@link #LRGB} or {@link #OKLAB}
+	 * @return mixture of colors
+	 * @since 3.8
+	 */
+	public static Color tint( Color color, float weight, int method ) {
+		return mix( Color.white, color, weight, method );
+	}
+
+	/**
 	 * Mix color with black, which makes the color darker.
 	 * This is the same as {@link #mix}{@code (Color.black, color, weight)}.
+	 * Uses {@link #RGB} interpolation method.
+	 * For better results use {@link #OKLAB} or {@link #LRGB} and {@link #shade(Color, float, int)}.
 	 *
-	 * @param color second color
-	 * @param weight the weight (in range 0-1) to mix the two colors.
-	 *               Larger weight uses more of first color, smaller weight more of second color.
+	 * @param color color to mix with black
+	 * @param weight the weight of black (in range 0-1), used to mix the two colors.
+	 *               Weight of given color is {@code 1-weight}.
+	 *               Larger weight uses more of black, smaller weight more of given color.
 	 * @return mixture of colors
 	 * @since 2
 	 */
 	public static Color shade( Color color, float weight ) {
 		return mix( Color.black, color, weight );
+	}
+
+	/**
+	 * Mix color with black, which makes the color darker.
+	 * This is the same as {@link #mix}{@code (Color.black, color, weight)}.
+	 * For best results use {@link #OKLAB} or {@link #LRGB}.
+	 *
+	 * @param color color to mix with black
+	 * @param weight the weight of black (in range 0-1), used to mix the two colors.
+	 *               Weight of given color is {@code 1-weight}.
+	 *               Larger weight uses more of black, smaller weight more of given color.
+	 * @param method interpolation method used to mix the colors:
+	 *               {@link #RGB}, {@link #LRGB} or {@link #OKLAB}
+	 * @return mixture of colors
+	 * @since 3.8
+	 */
+	public static Color shade( Color color, float weight, int method ) {
+		return mix( Color.black, color, weight, method );
 	}
 
 	/**
@@ -199,7 +312,7 @@ public class ColorFunctions
 	public static float luma( Color color ) {
 		// see https://en.wikipedia.org/wiki/Luma_(video)
 		// see https://www.w3.org/TR/2008/REC-WCAG20-20081211/#relativeluminancedef
-		// see https://github.com/less/less.js/blob/master/packages/less/src/less/tree/color.js
+		// see https://github.com/less/less.js/blob/master/packages/less/lib/less/tree/color.js
 		float r = gammaCorrection( color.getRed() / 255f );
 		float g = gammaCorrection( color.getGreen() / 255f );
 		float b = gammaCorrection( color.getBlue() / 255f );
@@ -227,7 +340,7 @@ public class ColorFunctions
 			return mix( color, mixFunction.color2, mixFunction.weight / 100 );
 		} else if( functions.length == 1 && functions[0] instanceof Mix2 ) {
 			Mix2 mixFunction = (Mix2) functions[0];
-			return mix( mixFunction.color1, color, mixFunction.weight / 100 );
+			return mix( mixFunction.color1, color, mixFunction.weight / 100, mixFunction.method );
 		}
 
 		// convert RGB to HSL
@@ -247,11 +360,14 @@ public class ColorFunctions
 	 * Clamps the given value between 0 and 100.
 	 */
 	public static float clamp( float value ) {
-		return (value < 0)
-			? 0
-			: ((value > 100)
-				? 100
-				: value);
+		return (value < 0) ? 0 : ((value > 100) ? 100 : value);
+	}
+
+	/**
+	 * Clamps the given value between 0 and 1.
+	 */
+	private static float clamp1( float value ) {
+		return (value < 0) ? 0 : ((value > 1) ? 1 : value);
 	}
 
 	//---- interface ColorFunction --------------------------------------------
@@ -443,10 +559,17 @@ public class ColorFunctions
 	{
 		public final Color color1;
 		public final float weight;
+		/** @since 3.8 */ public final int method;
 
 		public Mix2( Color color1, float weight ) {
+			this( color1, weight, RGB );
+		}
+
+		/** @since 3.8 */
+		public Mix2( Color color1, float weight, int method ) {
 			this.color1 = color1;
 			this.weight = weight;
+			this.method = method;
 		}
 
 		@Override
@@ -455,7 +578,7 @@ public class ColorFunctions
 			Color color2 = HSLColor.toRGB( hsla[0], hsla[1], hsla[2], hsla[3] / 100 );
 
 			// mix
-			Color color = mix( color1, color2, weight / 100 );
+			Color color = mix( color1, color2, weight / 100, method );
 
 			// convert RGB to HSL
 			float[] hsl = HSLColor.fromRGB( color );
@@ -467,5 +590,90 @@ public class ColorFunctions
 		public String toString() {
 			return String.format( "mix2(#%08x,%.0f%%)", color1.getRGB(), weight );
 		}
+	}
+
+	//---- linear RGB ---------------------------------------------------------
+
+	static float[] toLinearRGB( Color color ) {
+		float[] rgb = color.getRGBComponents( null );
+		return new float[] {
+			toLinearRGB( rgb[0] ),
+			toLinearRGB( rgb[1] ),
+			toLinearRGB( rgb[2] ),
+			rgb[3],
+		};
+	}
+
+	static Color fromLinearRGB( float[] lrgb ) {
+		return new Color(
+			clamp1( fromLinearRGB( lrgb[0] ) ),
+			clamp1( fromLinearRGB( lrgb[1] ) ),
+			clamp1( fromLinearRGB( lrgb[2] ) ),
+			lrgb[3] );
+	}
+
+	// source https://bottosson.github.io/posts/colorwrong/#what-can-we-do%3F
+
+	private static float fromLinearRGB( float x ) {
+		if( x >= 0.0031308f )
+			return (float) (1.055 * Math.pow( x, 1.0 / 2.4 ) - 0.055f);
+		else
+			return 12.92f * x;
+	}
+
+	private static float toLinearRGB( float x ) {
+		if( x >= 0.04045f )
+			return (float) Math.pow( (x + 0.055) / (1 + 0.055), 2.4 );
+		else
+			return x / 12.92f;
+	}
+
+	//---- Oklab --------------------------------------------------------------
+
+	// source https://bottosson.github.io/posts/oklab/
+
+	@SuppressWarnings( "FloatingPointLiteralPrecision" ) // Error Prone
+	static float[] toOklab( Color color ) {
+		float[] lrgb = toLinearRGB( color );
+		float r = lrgb[0];
+		float g = lrgb[1];
+		float b = lrgb[2];
+
+		float l = 0.4122214708f * r + 0.5363325363f * g + 0.0514459929f * b;
+		float m = 0.2119034982f * r + 0.6806995451f * g + 0.1073969566f * b;
+		float s = 0.0883024619f * r + 0.2817188376f * g + 0.6299787005f * b;
+
+		float l_ = (float) Math.cbrt( l );
+		float m_ = (float) Math.cbrt( m );
+		float s_ = (float) Math.cbrt( s );
+
+		return new float[] {
+			0.2104542553f * l_ + 0.7936177850f * m_ - 0.0040720468f * s_,
+			1.9779984951f * l_ - 2.4285922050f * m_ + 0.4505937099f * s_,
+			0.0259040371f * l_ + 0.7827717662f * m_ - 0.8086757660f * s_,
+			lrgb[3]
+		};
+	}
+
+	@SuppressWarnings( "FloatingPointLiteralPrecision" ) // Error Prone
+	static Color fromOklab( float[] oklab ) {
+		float L = oklab[0];
+		float a = oklab[1];
+		float b = oklab[2];
+
+		float l_ = L + 0.3963377774f * a + 0.2158037573f * b;
+		float m_ = L - 0.1055613458f * a - 0.0638541728f * b;
+		float s_ = L - 0.0894841775f * a - 1.2914855480f * b;
+
+		float l = l_*l_*l_;
+		float m = m_*m_*m_;
+		float s = s_*s_*s_;
+
+		return fromLinearRGB( new float[] {
+			+4.0767416621f * l - 3.3077115913f * m + 0.2309699292f * s,
+			-1.2684380046f * l + 2.6097574011f * m - 0.3413193965f * s,
+			-0.0041960863f * l - 0.7034186147f * m + 1.7076147010f * s,
+			oklab[3]
+		} );
 	}
 }

@@ -109,6 +109,17 @@ class FlatThemePropertiesSupport
 		}
 	}
 
+	Object getParsedValue( String key, String str ) {
+		try {
+			AtomicReference<Object> resultValueType = new AtomicReference<>();
+			String value = resolveValue( str );
+			return UIDefaultsLoaderAccessor.parseValue( key, value, resultValueType, resolver );
+		} catch( Exception ex ) {
+			System.out.println( textArea.getFileName() + ": " + ex.getMessage() ); //TODO
+			return null;
+		}
+	}
+
 	private KeyValue getKeyValueAtLine( int line ) {
 		try {
 			// get text at line

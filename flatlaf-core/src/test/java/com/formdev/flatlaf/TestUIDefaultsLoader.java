@@ -17,6 +17,7 @@
 package com.formdev.flatlaf;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -246,14 +247,32 @@ public class TestUIDefaultsLoader
 		// mix
 		assertEquals( new Color( 0x808000 ), parseColor( "mix(#f00, #0f0)" ) );
 		assertEquals( new Color( 0xbf4000 ), parseColor( "mix(#f00, #0f0, 75%)" ) );
+		assertEquals( new Color( 0x808000 ), parseColor( "mix(#f00, #0f0, rgb)" ) );
+		assertEquals( new Color( 0xbcbc00 ), parseColor( "mix(#f00, #0f0, lrgb)" ) );
+		assertEquals( new Color( 0xd0a800 ), parseColor( "mix(#f00, #0f0, oklab)" ) );
+		assertEquals( new Color( 0xbf4000 ), parseColor( "mix(#f00, #0f0, 75%, rgb)" ) );
+		assertEquals( new Color( 0xe18900 ), parseColor( "mix(#f00, #0f0, 75%, lrgb)" ) );
+		assertEquals( new Color( 0xed7300 ), parseColor( "mix(#f00, #0f0, 75%, oklab)" ) );
 
 		// tint
 		assertEquals( new Color( 0xff80ff ), parseColor( "tint(#f0f)" ) );
 		assertEquals( new Color( 0xffbfff ), parseColor( "tint(#f0f, 75%)" ) );
+		assertEquals( new Color( 0xff80ff ), parseColor( "tint(#f0f, rgb)" ) );
+		assertEquals( new Color( 0xffbcff ), parseColor( "tint(#f0f, lrgb)" ) );
+		assertEquals( new Color( 0xffa6ff ), parseColor( "tint(#f0f, oklab)" ) );
+		assertEquals( new Color( 0xffbfff ), parseColor( "tint(#f0f, 75%, rgb)" ) );
+		assertEquals( new Color( 0xffe1ff ), parseColor( "tint(#f0f, 75%, lrgb)" ) );
+		assertEquals( new Color( 0xffd4ff ), parseColor( "tint(#f0f, 75%, oklab)" ) );
 
 		// shade
 		assertEquals( new Color( 0x800080 ), parseColor( "shade(#f0f)" ) );
 		assertEquals( new Color( 0x400040 ), parseColor( "shade(#f0f, 75%)" ) );
+		assertEquals( new Color( 0x800080 ), parseColor( "shade(#f0f, rgb)" ) );
+		assertEquals( new Color( 0xbc00bc ), parseColor( "shade(#f0f, lrgb)" ) );
+		assertEquals( new Color( 0x630063 ), parseColor( "shade(#f0f, oklab)" ) );
+		assertEquals( new Color( 0x400040 ), parseColor( "shade(#f0f, 75%, rgb)" ) );
+		assertEquals( new Color( 0x890089 ), parseColor( "shade(#f0f, 75%, lrgb)" ) );
+		assertEquals( new Color( 0x220022 ), parseColor( "shade(#f0f, 75%, oklab)" ) );
 
 		// contrast
 		assertEquals( new Color( 0x0000ff ), parseColor( "contrast(#bbb, #00f, #0f0)" ) );
@@ -322,19 +341,6 @@ public class TestUIDefaultsLoader
 
 	@Test
 	void parseDerivedColorFunctions() {
-		// mix
-		assertDerivedColorEquals( new Color( 0x808000 ), "mix(#f00, #0f0, derived)", new Mix2( Color.red, 50 ) );
-		assertDerivedColorEquals( new Color( 0xbf4000 ), "mix(#f00, #0f0, 75%, derived)", new Mix2( Color.red, 75 ) );
-
-		// tint
-		assertDerivedColorEquals( new Color( 0xff80ff ), "tint(#f0f, derived)", new Mix2( Color.white, 50 ) );
-		assertDerivedColorEquals( new Color( 0xffbfff ), "tint(#f0f, 75%, derived)", new Mix2( Color.white, 75 ) );
-
-		// shade
-		assertDerivedColorEquals( new Color( 0x800080 ), "shade(#f0f, derived)", new Mix2( Color.black, 50 ) );
-		assertDerivedColorEquals( new Color( 0x400040 ), "shade(#f0f, 75%, derived)", new Mix2( Color.black, 75 ) );
-
-
 		// lighten
 		assertDerivedColorEquals( new Color( 0xff6666 ), "lighten(#f00, 20%, derived)",                                 new HSLIncreaseDecrease( 2, true,  20, false, true  ) );
 		assertDerivedColorEquals( new Color( 0xff3333 ), "lighten(#f00, 20%, derived relative)",                        new HSLIncreaseDecrease( 2, true,  20, true,  true  ) );
@@ -396,6 +402,18 @@ public class TestUIDefaultsLoader
 		// shade
 		assertDerivedColorEquals( new Color( 0x800080 ), "shade(#f0f, derived)",          new Mix2( new Color( 0x000000 ), 50 ) );
 		assertDerivedColorEquals( new Color( 0x400040 ), "shade(#f0f, 75%, derived)",     new Mix2( new Color( 0x000000 ), 75 ) );
+	}
+
+	@Test
+	void options() {
+		assertTrue( UIDefaultsLoader.hasOption( "derived", "derived" ) );
+		assertTrue( UIDefaultsLoader.hasOption( "derived ", "derived" ) );
+		assertTrue( UIDefaultsLoader.hasOption( " derived", "derived" ) );
+		assertTrue( UIDefaultsLoader.hasOption( "derived lazy", "derived" ) );
+		assertTrue( UIDefaultsLoader.hasOption( "lazy derived", "derived" ) );
+
+		assertFalse( UIDefaultsLoader.hasOption( "no-lazy", "lazy" ) );
+		assertFalse( UIDefaultsLoader.hasOption( "lazy-no", "lazy" ) );
 	}
 
 	private void assertDerivedColorEquals( Color expectedColor, String actualStyle, ColorFunction... expectedFunctions ) {

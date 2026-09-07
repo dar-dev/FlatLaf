@@ -84,6 +84,9 @@ public class FlatThemeTokenMaker
 		tokenMap.put( "derived", Token.RESERVED_WORD );
 		tokenMap.put( "autoInverse", Token.RESERVED_WORD );
 		tokenMap.put( "noAutoInverse", Token.RESERVED_WORD );
+		tokenMap.put( "rgb", Token.RESERVED_WORD );
+		tokenMap.put( "lrgb", Token.RESERVED_WORD );
+		tokenMap.put( "oklab", Token.RESERVED_WORD );
 	}
 
 	/**

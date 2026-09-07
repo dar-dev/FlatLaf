@@ -16,6 +16,7 @@
 
 package com.formdev.flatlaf.util;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.awt.Color;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,8 @@ import org.junit.jupiter.api.Test;
  */
 public class TestColorFunctions
 {
+	private static final float DELTA = 0.0001f;
+
 	@Test
 	void colorFunctions() {
 		// lighten, darken
@@ -63,6 +66,33 @@ public class TestColorFunctions
 	}
 
 	@Test
+	void colorFunctionsWithColorSpaces() {
+		// mix
+		assertEquals( new Color( 0x808000 ), ColorFunctions.mix( Color.red, Color.green, 0.5f, ColorFunctions.RGB ) );
+		assertEquals( new Color( 0xbcbc00 ), ColorFunctions.mix( Color.red, Color.green, 0.5f, ColorFunctions.LRGB ) );
+		assertEquals( new Color( 0xd0a800 ), ColorFunctions.mix( Color.red, Color.green, 0.5f, ColorFunctions.OKLAB ) );
+		assertEquals( new Color( 0xbf4000 ), ColorFunctions.mix( Color.red, Color.green, 0.75f, ColorFunctions.RGB ) );
+		assertEquals( new Color( 0xe18900 ), ColorFunctions.mix( Color.red, Color.green, 0.75f, ColorFunctions.LRGB ) );
+		assertEquals( new Color( 0xed7300 ), ColorFunctions.mix( Color.red, Color.green, 0.75f, ColorFunctions.OKLAB ) );
+
+		// tint
+		assertEquals( new Color( 0xff80ff ), ColorFunctions.tint( Color.magenta, 0.5f, ColorFunctions.RGB ) );
+		assertEquals( new Color( 0xffbcff ), ColorFunctions.tint( Color.magenta, 0.5f, ColorFunctions.LRGB ) );
+		assertEquals( new Color( 0xffa6ff ), ColorFunctions.tint( Color.magenta, 0.5f, ColorFunctions.OKLAB ) );
+		assertEquals( new Color( 0xffbfff ), ColorFunctions.tint( Color.magenta, 0.75f, ColorFunctions.RGB ) );
+		assertEquals( new Color( 0xffe1ff ), ColorFunctions.tint( Color.magenta, 0.75f, ColorFunctions.LRGB ) );
+		assertEquals( new Color( 0xffd4ff ), ColorFunctions.tint( Color.magenta, 0.75f, ColorFunctions.OKLAB ) );
+
+		// shade
+		assertEquals( new Color( 0x800080 ), ColorFunctions.shade( Color.magenta, 0.5f, ColorFunctions.RGB ) );
+		assertEquals( new Color( 0xbc00bc ), ColorFunctions.shade( Color.magenta, 0.5f, ColorFunctions.LRGB ) );
+		assertEquals( new Color( 0x630063 ), ColorFunctions.shade( Color.magenta, 0.5f, ColorFunctions.OKLAB ) );
+		assertEquals( new Color( 0x400040 ), ColorFunctions.shade( Color.magenta, 0.75f, ColorFunctions.RGB ) );
+		assertEquals( new Color( 0x890089 ), ColorFunctions.shade( Color.magenta, 0.75f, ColorFunctions.LRGB ) );
+		assertEquals( new Color( 0x220022 ), ColorFunctions.shade( Color.magenta, 0.75f, ColorFunctions.OKLAB ) );
+	}
+
+	@Test
 	void luma() {
 		assertEquals( 0, ColorFunctions.luma( Color.black ) );
 		assertEquals( 1, ColorFunctions.luma( Color.white ) );
@@ -77,5 +107,62 @@ public class TestColorFunctions
 		assertEquals( 0.051269464f, ColorFunctions.luma( Color.darkGray ) );
 		assertEquals( 0.21586052f, ColorFunctions.luma( Color.gray ) );
 		assertEquals( 0.52711517f, ColorFunctions.luma( Color.lightGray ) );
+	}
+
+	@Test
+	void linearRGB() {
+		// common 8-bit values
+		assertArrayEquals( new float[] { 0, 0.000304f, 0.002428f, 1 }, ColorFunctions.toLinearRGB( new Color( 0, 1, 8 ) ), DELTA );
+		assertArrayEquals( new float[] { 0.003035f, 0.003347f, 0.051269f, 1 }, ColorFunctions.toLinearRGB( new Color( 10, 11, 64 ) ), DELTA );
+		assertArrayEquals( new float[] { 0.215861f, 0.527115f, 1, 1 }, ColorFunctions.toLinearRGB( new Color( 128, 192, 255 ) ), DELTA );
+
+		// alpha must not change
+		assertArrayEquals( new float[] { 0, 0, 0, 0.5f }, ColorFunctions.toLinearRGB( new Color( 0, 0, 0, 0.5f ) ) );
+		assertEquals( new Color( 0, 0, 0, 0.5f ), ColorFunctions.fromLinearRGB( ColorFunctions.toLinearRGB( new Color( 0, 0, 0, 0.5f ) ) ) );
+
+		// all 256 8-bit values
+		for( int i = 0; i < 255; i += 3 ) {
+			Color c = new Color( i, i + 1, i + 2 );
+			assertEquals( c, ColorFunctions.fromLinearRGB( ColorFunctions.toLinearRGB( c ) ) );
+			assertEquals(
+				ColorFunctions.mix( c, Color.green, 0.3f, ColorFunctions.LRGB ),
+				ColorFunctions.mix( Color.green, c, 1 - 0.3f, ColorFunctions.LRGB ) );
+		}
+	}
+
+	@Test
+	void oklab() {
+		// known reference values
+		assertArrayEquals( new float[] { 0, 0, 0, 1 }, ColorFunctions.toOklab( Color.black ) );
+		assertArrayEquals( new float[] { 1, 0, 0, 1 }, ColorFunctions.toOklab( Color.white ), DELTA );
+		assertArrayEquals( new float[] { 0.6280f, 0.2249f, 0.1258f, 1 }, ColorFunctions.toOklab( Color.red ), DELTA );
+		assertArrayEquals( new float[] { 0.8664f, -0.2339f, 0.1795f, 1 }, ColorFunctions.toOklab( Color.green ), DELTA );
+		assertArrayEquals( new float[] { 0.4520f, -0.0324f, -0.3116f, 1 }, ColorFunctions.toOklab( Color.blue ), DELTA );
+
+		// gray
+		assertArrayEquals( new float[] { 0.8077962f, 0, 0, 1 }, ColorFunctions.toOklab( Color.lightGray ), DELTA );
+		assertArrayEquals( new float[] { 0.5998708f, 0, 0, 1 }, ColorFunctions.toOklab( Color.gray ), DELTA );
+
+		// round trip
+		oklabRoundTrip( Color.white );
+		oklabRoundTrip( Color.lightGray );
+		oklabRoundTrip( Color.gray );
+		oklabRoundTrip( Color.darkGray );
+		oklabRoundTrip( Color.black );
+		oklabRoundTrip( Color.red );
+		oklabRoundTrip( Color.pink );
+		oklabRoundTrip( Color.orange );
+		oklabRoundTrip( Color.yellow );
+		oklabRoundTrip( Color.green );
+		oklabRoundTrip( Color.magenta );
+		oklabRoundTrip( Color.cyan );
+		oklabRoundTrip( Color.blue );
+	}
+
+	private void oklabRoundTrip( Color c ) {
+		assertEquals( c.getRGB(), ColorFunctions.fromOklab( ColorFunctions.toOklab( c ) ).getRGB() );
+		assertEquals(
+			ColorFunctions.mix( c, Color.green, 0.3f, ColorFunctions.OKLAB ),
+			ColorFunctions.mix( Color.green, c, 1 - 0.3f, ColorFunctions.OKLAB ) );
 	}
 }

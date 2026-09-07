@@ -59,7 +59,7 @@ publishing {
 				developers {
 					developer {
 						name = "Karl Tauber"
-						organization = "FormDev Software GmbH"
+						organization = "FormDev Software"
 						organizationUrl = "https://www.formdev.com/"
 					}
 				}

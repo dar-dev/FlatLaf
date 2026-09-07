@@ -1074,13 +1074,13 @@ class UIDefaultsLoader
 
 		if( params.size() > 2 ) {
 			String options = params.get( 2 );
-			relative = options.contains( "relative" );
-			autoInverse = options.contains( "autoInverse" );
-			derived = options.contains( "derived" );
-			lazy = options.contains( "lazy" );
+			relative = hasOption( options, "relative" );
+			autoInverse = hasOption( options, "autoInverse" );
+			derived = hasOption( options, "derived" );
+			lazy = hasOption( options, "lazy" );
 
 			// use autoInverse by default for derived colors, except if noAutoInverse is set
-			if( derived && !options.contains( "noAutoInverse" ) )
+			if( derived && !hasOption( options, "noAutoInverse" ) )
 				autoInverse = true;
 		}
 
@@ -1111,8 +1111,8 @@ class UIDefaultsLoader
 
 		if( params.size() > 2 ) {
 			String options = params.get( 2 );
-			derived = options.contains( "derived" );
-			lazy = options.contains( "lazy" );
+			derived = hasOption( options, "derived" );
+			lazy = hasOption( options, "lazy" );
 		}
 
 		// create function
@@ -1141,8 +1141,8 @@ class UIDefaultsLoader
 
 		if( params.size() > 2 ) {
 			String options = params.get( 2 );
-			derived = options.contains( "derived" );
-			lazy = options.contains( "lazy" );
+			derived = hasOption( options, "derived" );
+			lazy = hasOption( options, "lazy" );
 		}
 
 		// create function
@@ -1177,8 +1177,8 @@ class UIDefaultsLoader
 
 		if( params.size() > 2 ) {
 			String options = params.get( 2 );
-			derived = options.contains( "derived" );
-			lazy = options.contains( "lazy" );
+			derived = hasOption( options, "derived" );
+			lazy = hasOption( options, "lazy" );
 		}
 
 		// create function
@@ -1199,7 +1199,7 @@ class UIDefaultsLoader
 	 *   - color2: a color (e.g. #f00) or a color function
 	 *   - weight: the weight (in range 0-100%) to mix the two colors
 	 *             larger weight uses more of first color, smaller weight more of second color
-	 *   - options: [derived] [lazy]
+	 *   - options: [rgb|lrgb|oklab] [derived] [lazy]
 	 */
 	private static Object parseColorMix( String color1Str, List<String> params, Function<String, String> resolver )
 		throws IllegalArgumentException
@@ -1211,6 +1211,7 @@ class UIDefaultsLoader
 		int weight = 50;
 		boolean derived = false;
 		boolean lazy = false;
+		int method = ColorFunctions.RGB;
 
 		if( params.size() > i ) {
 			String weightStr = params.get( i );
@@ -1221,8 +1222,14 @@ class UIDefaultsLoader
 		}
 		if( params.size() > i ) {
 			String options = params.get( i );
-			derived = options.contains( "derived" );
-			lazy = options.contains( "lazy" );
+			if( hasOption( options, "rgb" ) )
+				method = ColorFunctions.RGB;
+			else if( hasOption( options, "lrgb" ) )
+				method = ColorFunctions.LRGB;
+			else if( hasOption( options, "oklab" ) )
+				method = ColorFunctions.OKLAB;
+			derived = hasOption( options, "derived" );
+			lazy = hasOption( options, "lazy" );
 		}
 
 		// parse second color
@@ -1231,7 +1238,7 @@ class UIDefaultsLoader
 			return null;
 
 		// create function
-		ColorFunction function = new ColorFunctions.Mix2( color1, weight );
+		ColorFunction function = new ColorFunctions.Mix2( color1, weight, method );
 
 		if( lazy )
 			return newLazyColorFunction( color2Str, function );
@@ -1443,7 +1450,7 @@ class UIDefaultsLoader
 		return font;
 	}
 
-	private static int parsePercentage( String value )
+	static int parsePercentage( String value )
 		throws IllegalArgumentException, NumberFormatException
 	{
 		if( !value.endsWith( "%" ) )
@@ -1493,7 +1500,7 @@ class UIDefaultsLoader
 		return integer;
 	}
 
-	private static Integer parseInteger( String value )
+	static Integer parseInteger( String value )
 		throws NumberFormatException
 	{
 		try {
@@ -1584,7 +1591,7 @@ class UIDefaultsLoader
 	 * Splits function parameters and allows using functions as parameters.
 	 * In other words: Delimiters surrounded by '(' and ')' are ignored.
 	 */
-	private static List<String> splitFunctionParams( String str, char delim ) {
+	static List<String> splitFunctionParams( String str, char delim ) {
 		ArrayList<String> strs = new ArrayList<>();
 		int nestLevel = 0;
 		int start = 0;
@@ -1607,6 +1614,14 @@ class UIDefaultsLoader
 			strs.add( s );
 
 		return strs;
+	}
+
+	static boolean hasOption( String options, String option ) {
+		int index = options.indexOf( option );
+		int endIndex = index + option.length();
+		return index >= 0 &&
+			(index == 0 || Character.isWhitespace( options.charAt( index - 1 ) )) &&
+			(endIndex == options.length() || Character.isWhitespace( options.charAt( endIndex ) ));
 	}
 
 	private static Object invokeConstructorOrStaticMethod( Executable[] constructorsOrMethods,

@@ -56,6 +56,8 @@ class FlatThemePreview
 	private boolean inGetDefaultFont;
 	private boolean inGetVariables;
 
+	private final FlatColorFunctionPreview colorFunctionPreview;
+
 	FlatThemePreview( FlatSyntaxTextArea textArea ) {
 		this.textArea = textArea;
 		state = Preferences.userRoot().node( FlatThemeFileEditor.PREFS_ROOT_PATH );
@@ -87,6 +89,8 @@ class FlatThemePreview
 				selectRecentTab();
 				updateLater();
 		} );
+
+		colorFunctionPreview = new FlatColorFunctionPreview( textArea );
 	}
 
 	private JScrollPane createPreviewTab( JComponent c ) {
@@ -114,6 +118,16 @@ class FlatThemePreview
 	private void selectedTabChanged() {
 		update();
 		state.putInt( KEY_SELECTED_TAB, tabbedPane.getSelectedIndex() );
+	}
+
+	void showColorFunctionPreview( boolean show ) {
+		if( show )
+			centerPanel.add( colorFunctionPreview, BorderLayout.SOUTH );
+		else
+			centerPanel.remove( colorFunctionPreview );
+
+		revalidate();
+		repaint();
 	}
 
 	@Override
@@ -232,6 +246,7 @@ class FlatThemePreview
 
 	private void initComponents() {
 		// JFormDesigner - Component initialization - DO NOT MODIFY  //GEN-BEGIN:initComponents
+		centerPanel = new JPanel();
 		tabbedPane = new FlatTabbedPane();
 		previewSeparator = new JSeparator();
 		previewLabel = new JLabel();
@@ -239,13 +254,19 @@ class FlatThemePreview
 		//======== this ========
 		setLayout(new BorderLayout());
 
-		//======== tabbedPane ========
+		//======== centerPanel ========
 		{
-			tabbedPane.setLeadingComponent(previewLabel);
-			tabbedPane.setTabAreaAlignment(FlatTabbedPane.TabAreaAlignment.trailing);
-			tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+			centerPanel.setLayout(new BorderLayout());
+
+			//======== tabbedPane ========
+			{
+				tabbedPane.setLeadingComponent(previewLabel);
+				tabbedPane.setTabAreaAlignment(FlatTabbedPane.TabAreaAlignment.trailing);
+				tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
+			}
+			centerPanel.add(tabbedPane, BorderLayout.CENTER);
 		}
-		add(tabbedPane, BorderLayout.CENTER);
+		add(centerPanel, BorderLayout.CENTER);
 
 		//---- previewSeparator ----
 		previewSeparator.setOrientation(SwingConstants.VERTICAL);
@@ -258,6 +279,7 @@ class FlatThemePreview
 	}
 
 	// JFormDesigner - Variables declaration - DO NOT MODIFY  //GEN-BEGIN:variables
+	private JPanel centerPanel;
 	private FlatTabbedPane tabbedPane;
 	private JSeparator previewSeparator;
 	private JLabel previewLabel;

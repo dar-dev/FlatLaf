@@ -92,6 +92,7 @@ class FlatThemeFileEditor
 	private static final String KEY_RECENT_FILE = "recentFile";
 	private static final String KEY_WINDOW_BOUNDS = "windowBounds";
 	private static final String KEY_PREVIEW = "preview";
+	private static final String KEY_PREVIEW_COLOR_FUNCTION = "previewColorFunction";
 	private static final String KEY_LAF = "laf";
 	private static final String KEY_FONT_SIZE_INCR = "fontSizeIncr";
 	private static final String KEY_SHOW_HSL_COLORS = "showHslColors";
@@ -475,6 +476,8 @@ class FlatThemeFileEditor
 
 		if( state.getBoolean( KEY_PREVIEW, true ) )
 			themeEditorPane.showPreview( true );
+		if( state.getBoolean( KEY_PREVIEW_COLOR_FUNCTION, true ) )
+			themeEditorPane.showColorFunctionPreview( true );
 
 		tabbedPane.addTab( titleFun.get(), null, themeEditorPane, file.getAbsolutePath() );
 
@@ -795,6 +798,17 @@ class FlatThemeFileEditor
 		for( FlatThemeEditorPane themeEditorPane : getThemeEditorPanes() )
 			themeEditorPane.showPreview( show );
 		putPrefsBoolean( state, KEY_PREVIEW, show, true );
+
+		previewColorFunctionMenuItem.setEnabled( show );
+		if( show )
+			showHideColorFunctionPreview();
+	}
+
+	private void showHideColorFunctionPreview() {
+		boolean show = previewColorFunctionMenuItem.isSelected();
+		for( FlatThemeEditorPane themeEditorPane : getThemeEditorPanes() )
+			themeEditorPane.showColorFunctionPreview( show );
+		putPrefsBoolean( state, KEY_PREVIEW_COLOR_FUNCTION, show, true );
 	}
 
 	private void lightLaf() {
@@ -885,7 +899,7 @@ class FlatThemeFileEditor
 				titleLabel,
 				"Edits FlatLaf Swing look and feel theme files",
 				" ",
-				"Copyright 2019-" + Year.now() + " FormDev Software GmbH",
+				"Copyright 2019-" + Year.now() + " FormDev Software",
 				linkLabel,
 			},
 			"About", JOptionPane.PLAIN_MESSAGE );
@@ -918,6 +932,8 @@ class FlatThemeFileEditor
 
 		// restore menu item selection
 		previewMenuItem.setSelected( state.getBoolean( KEY_PREVIEW, true ) );
+		previewColorFunctionMenuItem.setSelected( state.getBoolean( KEY_PREVIEW_COLOR_FUNCTION, true ) );
+		previewColorFunctionMenuItem.setEnabled( previewMenuItem.isSelected() );
 		showHSLColorsMenuItem.setSelected( FlatThemeEditorOverlay.showHSL );
 		showRGBColorsMenuItem.setSelected( FlatThemeEditorOverlay.showRGB );
 		showColorLumaMenuItem.setSelected( FlatThemeEditorOverlay.showLuma );
@@ -1036,6 +1052,7 @@ class FlatThemeFileEditor
 		pickColorMenuItem = new JMenuItem();
 		viewMenu = new JMenu();
 		previewMenuItem = new JCheckBoxMenuItem();
+		previewColorFunctionMenuItem = new JCheckBoxMenuItem();
 		lightLafMenuItem = new JRadioButtonMenuItem();
 		darkLafMenuItem = new JRadioButtonMenuItem();
 		incrFontSizeMenuItem = new JMenuItem();
@@ -1155,6 +1172,11 @@ class FlatThemeFileEditor
 				previewMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
 				previewMenuItem.addActionListener(e -> showHidePreview());
 				viewMenu.add(previewMenuItem);
+
+				//---- previewColorFunctionMenuItem ----
+				previewColorFunctionMenuItem.setText("Color Function Preview");
+				previewColorFunctionMenuItem.addActionListener(e -> showHideColorFunctionPreview());
+				viewMenu.add(previewColorFunctionMenuItem);
 				viewMenu.addSeparator();
 
 				//---- lightLafMenuItem ----
@@ -1319,6 +1341,7 @@ class FlatThemeFileEditor
 	private JMenuItem pickColorMenuItem;
 	private JMenu viewMenu;
 	private JCheckBoxMenuItem previewMenuItem;
+	private JCheckBoxMenuItem previewColorFunctionMenuItem;
 	private JRadioButtonMenuItem lightLafMenuItem;
 	private JRadioButtonMenuItem darkLafMenuItem;
 	private JMenuItem incrFontSizeMenuItem;

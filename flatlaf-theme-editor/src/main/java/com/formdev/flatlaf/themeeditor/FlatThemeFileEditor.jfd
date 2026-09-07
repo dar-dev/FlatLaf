@@ -1,4 +1,4 @@
-JFDML JFormDesigner: "8.1.0.0.283" Java: "19.0.2" encoding: "UTF-8"
+JFDML JFormDesigner: "8.3" encoding: "UTF-8"
 
 new FormModel {
 	contentType: "form/swing"
@@ -140,6 +140,11 @@ new FormModel {
 						"text": "Preview"
 						"accelerator": static javax.swing.KeyStroke getKeyStroke( 80, 4356, false )
 						addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "showHidePreview", false ) )
+					} )
+					add( new FormComponent( "javax.swing.JCheckBoxMenuItem" ) {
+						name: "previewColorFunctionMenuItem"
+						"text": "Color Function Preview"
+						addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "showHideColorFunctionPreview", false ) )
 					} )
 					add( new FormComponent( "javax.swing.JPopupMenu$Separator" ) {
 						name: "separator3"

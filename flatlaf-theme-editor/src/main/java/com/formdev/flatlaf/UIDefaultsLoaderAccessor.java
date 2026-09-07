@@ -17,6 +17,7 @@
 package com.formdev.flatlaf;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -77,5 +78,29 @@ public class UIDefaultsLoaderAccessor
 
 	public static Properties newUIProperties( boolean dark ) {
 		return UIDefaultsLoader.newUIProperties( dark );
+	}
+
+	public static int parsePercentage( String value )
+		throws IllegalArgumentException, NumberFormatException
+	{
+		return UIDefaultsLoader.parsePercentage( value );
+	}
+
+	public static Integer parseInteger( String value )
+		throws NumberFormatException
+	{
+		return UIDefaultsLoader.parseInteger( value );
+	}
+
+	public static List<String> splitFunctionParams( String str, char delim ) {
+		return UIDefaultsLoader.splitFunctionParams( str, delim );
+	}
+
+	public static boolean hasOption( String options, String option ) {
+		return UIDefaultsLoader.hasOption( options, option );
+	}
+
+	public static Object lazyUIManagerGet( String uiKey ) {
+		return UIDefaultsLoader.lazyUIManagerGet( uiKey );
 	}
 }

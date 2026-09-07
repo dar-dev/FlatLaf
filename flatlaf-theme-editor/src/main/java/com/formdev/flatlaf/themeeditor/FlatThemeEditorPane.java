@@ -330,6 +330,11 @@ class FlatThemeEditorPane
 		revalidate();
 	}
 
+	void showColorFunctionPreview( boolean show ) {
+		if( preview != null )
+			preview.showColorFunctionPreview( show );
+	}
+
 	void notifyTextAreaAction( String actionKey ) {
 		Action action = textArea.getActionMap().get( actionKey );
 		if( action != null && action.isEnabled() )

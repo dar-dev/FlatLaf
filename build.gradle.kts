@@ -72,8 +72,8 @@ allprojects {
 		withType<Jar>().configureEach {
 			// manifest for all created JARs
 			manifest.attributes(
-				"Implementation-Vendor" to "FormDev Software GmbH",
-				"Implementation-Copyright" to "Copyright (C) 2019-${java.time.LocalDate.now().year} FormDev Software GmbH. All rights reserved.",
+				"Implementation-Vendor" to "FormDev Software",
+				"Implementation-Copyright" to "Copyright (C) 2019-${java.time.LocalDate.now().year} FormDev Software. All rights reserved.",
 				"Implementation-Version" to project.version
 			)
 

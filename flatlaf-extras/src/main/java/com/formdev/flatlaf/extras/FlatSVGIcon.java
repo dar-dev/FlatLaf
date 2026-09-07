@@ -599,6 +599,9 @@ public class FlatSVGIcon
 
 		Graphics2D g2 = new GraphicsFilter( (Graphics2D) g.create(), colorFilter, globalColorFilter, grayFilter );
 
+		// set color for the case that the SVG uses fill="currentColor"
+		g2.setColor( (c != null) ? c.getForeground() : UIManager.getColor( "Label.foreground" ) );
+
 		try {
 			setRenderingHints( g2 );
 
