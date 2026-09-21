@@ -300,6 +300,8 @@ public class FlatContainerTest
 		int tabCount = tabbedPane.getTabCount();
 		if( tabCount > 0 )
 			tabbedPane.setTitleAt( 0, s + "1" );
+		if( tabCount > 2 )
+			tabbedPane.setTitleAt( 2, html ? "<html>Disa<b>bl</b>ed</html>" : "Disabled" );
 		if( tabCount > 3 )
 			tabbedPane.setTitleAt( 3, s + "4" );
 	}
@@ -374,6 +376,14 @@ public class FlatContainerTest
 			tabbedPane.setBackgroundAt( 0, enabled ? Color.red : null );
 		if( tabCount > 1 )
 			tabbedPane.setForegroundAt( 1, enabled ? Color.red : null );
+	}
+
+	private void tabEnableDisableChanged() {
+		for( JTabbedPane tabbedPane : allTabbedPanes ) {
+			int tabCount = tabbedPane.getTabCount();
+			for( int i = 0; i < tabCount; i++ )
+				tabbedPane.setEnabledAt( i, !tabbedPane.isEnabledAt( i ) );
+		}
 	}
 
 	private void leadingComponentChanged() {
@@ -567,6 +577,7 @@ public class FlatContainerTest
 		JLabel tabPlacementLabel = new JLabel();
 		tabPlacementField = new FlatTestEnumSelector<>();
 		tabBackForegroundCheckBox = new JCheckBox();
+		JCheckBox tabEnableDisableCheckBox = new JCheckBox();
 		JLabel tabsPopupPolicyLabel = new JLabel();
 		tabsPopupPolicyField = new FlatTestEnumSelector<>();
 		tabIconsCheckBox = new JCheckBox();
@@ -783,6 +794,12 @@ public class FlatContainerTest
 				tabBackForegroundCheckBox.setText("Tab back/foreground");
 				tabBackForegroundCheckBox.addActionListener(e -> tabBackForegroundChanged());
 				tabbedPaneControlPanel.add(tabBackForegroundCheckBox, "cell 2 1 2 1");
+
+				//---- tabEnableDisableCheckBox ----
+				tabEnableDisableCheckBox.setText("Tab enable/disable");
+				tabEnableDisableCheckBox.setSelected(true);
+				tabEnableDisableCheckBox.addActionListener(e -> tabEnableDisableChanged());
+				tabbedPaneControlPanel.add(tabEnableDisableCheckBox, "cell 2 1 2 1");
 
 				//---- tabsPopupPolicyLabel ----
 				tabsPopupPolicyLabel.setText("Tabs popup policy:");

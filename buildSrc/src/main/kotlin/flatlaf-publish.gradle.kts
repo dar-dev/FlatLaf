@@ -40,7 +40,10 @@ publishing {
 			}
 			groupId = "com.formdev"
 
-			from( components["java"] )
+			if( pluginManager.hasPlugin( "java" ) )
+				from( components["java"] )
+			else if( pluginManager.hasPlugin( "java-platform" ) )
+				from( components["javaPlatform"] )
 
 			pom {
 				afterEvaluate {

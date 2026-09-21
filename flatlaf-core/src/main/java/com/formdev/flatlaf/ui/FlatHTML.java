@@ -190,11 +190,13 @@ debug*/
 	/**
 	 * Updates foreground in style sheet of the HTML view.
 	 * Adds "body { color: #&lt;foreground-hex&gt;; }"
+	 *
+	 * @see #restoreRendererCSSForeground(View, Object)
 	 */
-	public static void updateRendererCSSForeground( View view, Color foreground ) {
+	public static Object updateRendererCSSForeground( View view, Color foreground ) {
 		Document doc = view.getDocument();
 		if( !(doc instanceof HTMLDocument) || foreground == null )
-			return;
+			return null;
 
 		// add foreground rule if necessary
 		//  - use tag 'body' because BasicHTML.createHTMLView() also uses this tag
@@ -209,11 +211,45 @@ debug*/
 			StyleSheet styleSheet = ((HTMLDocument)doc).getStyleSheet();
 			styleSheet.addRule( String.format( "body { color: #%06x; }", foreground.getRGB() & 0xffffff ) );
 			clearViewCaches( view );
+			return CSS_FOREGROUND_ADDED;
 		} else if( !foreground.equals( bodyStyle.getAttribute( StyleConstants.Foreground ) ) ) {
+			Object oldForeground = bodyStyle.getAttribute( StyleConstants.Foreground );
 			bodyStyle.addAttribute( StyleConstants.Foreground, foreground );
+			clearViewCaches( view );
+			return (oldForeground != null) ? oldForeground : CSS_FOREGROUND_ADDED;
+		}
+		return null;
+	}
+
+	/**
+	 * Restores foreground in style sheet of the HTML view
+	 * to the value replaced by {@link #updateRendererCSSForeground(View, Color)}.
+	 *
+	 * @see #updateRendererCSSForeground(View, Color)
+	 * @since 3.8
+	 */
+	public static void restoreRendererCSSForeground( View view, Object oldCSSForeground ) {
+		if( oldCSSForeground == null )
+			return;
+
+		Document doc = view.getDocument();
+		if( !(doc instanceof HTMLDocument) )
+			return;
+
+		Style bodyStyle = ((HTMLDocument)doc).getStyle( "body" );
+		if( bodyStyle == null )
+			return;
+
+		if( oldCSSForeground == CSS_FOREGROUND_ADDED ) {
+			bodyStyle.removeAttribute( StyleConstants.Foreground );
+			clearViewCaches( view );
+		} else if( oldCSSForeground instanceof Color ) {
+			bodyStyle.addAttribute( StyleConstants.Foreground, oldCSSForeground );
 			clearViewCaches( view );
 		}
 	}
+
+	private static final Object CSS_FOREGROUND_ADDED = new Object();
 
 	/**
 	 * Clears cached values in view so that CSS changes take effect.

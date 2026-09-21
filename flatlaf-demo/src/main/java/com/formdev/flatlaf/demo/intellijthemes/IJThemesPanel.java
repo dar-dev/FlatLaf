@@ -33,6 +33,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -427,7 +428,7 @@ public class IJThemesPanel
 					URL url = lafClass.getResource( propertiesName );
 					if( url != null && "file".equals( url.getProtocol() ) ) {
 						try {
-							File file = new File( url.toURI() );
+							File file = Paths.get( url.toURI() ).toFile();
 							if( file.lastModified() > lastLafChangeTime ) {
 								reload = true;
 								break;

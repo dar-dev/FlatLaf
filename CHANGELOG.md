@@ -8,6 +8,10 @@ FlatLaf Change Log
 - Added support for [Oklab](https://bottosson.github.io/posts/oklab/) and linear sRGB
   color spaces to color functions `mix()`, `tint()` and `shade()`. (PR #1132, issue #1109)
 - Theme Editor: Added preview for color functions. (see PR #1132)
+- macOS: Add support for `Cmd+Backspace` and `Cmd+Delete` shortcuts to text
+  components. (PR #1142, issue #1095)
+- Publish Maven/Gradle BOM (Bill of Materials) to Maven Central. Artifact ID
+  is `flatlaf-bom`. (issue #1146)
 
 #### Fixed bugs
 
@@ -18,8 +22,13 @@ FlatLaf Change Log
 - ScrollPane: When using rounded border and scrollpane width was near view
   width, then the horizontal scrollbar was shown even when it was not necessary.
   (issue #1135)
+- TabbedPane: Titles of disabled tabs were not grayed out if title contains
+  HTML. (issue #1143)
 - Make sure that `META-INF/MANIFEST.MF` is first jar entry, so that tools that
   use `JarInputStream` readers see `Multi-Release: true`. (issue #1139)
+- Native libraries: Fixed `IllegalArgumentException: URI has an authority component`
+  trying to load native library when running application from a Windows network drive.
+  (issue #1145)
 - Extras:
   - `FlatSVGIcon`: Fixed wrong color when SVG uses `fill="currentColor"`. (issue #1144)
 

@@ -58,7 +58,8 @@ tasks {
 	}
 
 	withType<AbstractPublishToMaven>().configureEach {
-		onlyIf { !rootProject.hasProperty( "skipFonts" ) }
+		val skipFonts = rootProject.hasProperty( "skipFonts" ) // necessary for configuration cache
+		onlyIf { !skipFonts }
 	}
 }
 

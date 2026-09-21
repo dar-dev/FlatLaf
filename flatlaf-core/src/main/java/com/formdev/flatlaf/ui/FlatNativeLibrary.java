@@ -19,6 +19,7 @@ package com.formdev.flatlaf.ui;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.file.Paths;
 import java.security.CodeSource;
 import com.formdev.flatlaf.FlatSystemProperties;
 import com.formdev.flatlaf.util.LoggingFacade;
@@ -259,7 +260,10 @@ class FlatNativeLibrary
 
 			File jarFile;
 			try {
-				jarFile = new File( jarUrl.toURI() );
+				// Paths.get() is necessary for Windows network paths (e.g. \\host\some\path)
+				// creating a java.io.File object directly from an URI would throw:
+				//    IllegalArgumentException: URI has an authority component
+				jarFile = Paths.get( jarUrl.toURI() ).toFile();
 			} catch( URISyntaxException ex ) {
 				// workaround for Eclipse, which does not encode special characters in URL
 				// (and returns invalid URL in that case)

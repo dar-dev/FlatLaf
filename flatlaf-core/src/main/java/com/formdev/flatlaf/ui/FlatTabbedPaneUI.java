@@ -1302,6 +1302,14 @@ debug*/
 			// html
 			View view = getTextViewForTab( tabIndex );
 			if( view != null ) {
+				// update disabled foreground color in HTML view
+				// if tab is disabled, but tabbed pane is enabled
+				// (UIManager.getColor("textInactiveText") is used for disabled tabbed panes;
+				// see: javax.swing.text.GlyphView.paint())
+				Object oldCSSForeground = null;
+				if( !tabPane.isEnabledAt( tabIndex ) && tabPane.isEnabled() )
+					oldCSSForeground = FlatHTML.updateRendererCSSForeground( view, disabledForeground );
+
 				AffineTransform oldTransform = rotateGraphics( g, tabPlacement, textRect );
 				Rectangle textRect2 = (oldTransform != null)
 					? new Rectangle( textRect.x, textRect.y, textRect.height, textRect.width )
@@ -1311,6 +1319,9 @@ debug*/
 
 				if( oldTransform != null )
 					((Graphics2D)g).setTransform( oldTransform );
+
+				if( oldCSSForeground != null )
+					FlatHTML.restoreRendererCSSForeground( view, oldCSSForeground );
 				return;
 			}
 

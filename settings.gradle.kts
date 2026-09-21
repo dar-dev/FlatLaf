@@ -25,6 +25,10 @@ include( "flatlaf-demo" )
 include( "flatlaf-testing" )
 include( "flatlaf-theme-editor" )
 
+val isBuildship = (System.getProperty( "eclipse.application" ) != null)
+if( !isBuildship )
+	include( "flatlaf-bom" )
+
 includeProject( "flatlaf-fonts-inter",          "flatlaf-fonts/flatlaf-fonts-inter" )
 includeProject( "flatlaf-fonts-jetbrains-mono", "flatlaf-fonts/flatlaf-fonts-jetbrains-mono" )
 includeProject( "flatlaf-fonts-roboto",         "flatlaf-fonts/flatlaf-fonts-roboto" )

@@ -24,6 +24,7 @@ import javax.swing.UIDefaults;
 import javax.swing.UIDefaults.LazyValue;
 import javax.swing.UIManager;
 import javax.swing.plaf.InputMapUIResource;
+import com.formdev.flatlaf.ui.FlatTextFieldUI;
 import com.formdev.flatlaf.util.SystemInfo;
 import static javax.swing.text.DefaultEditorKit.*;
 import java.util.function.BooleanSupplier;
@@ -213,6 +214,10 @@ class FlatInputMaps
 			// delete previous/next word
 			"ctrl W", deletePrevWordAction,
 			"ctrl D", deleteNextCharAction,
+
+			// delete to line begin/end with custom actions
+			"meta BACK_SPACE", new FlatTextFieldUI.DeleteToBeginLineAction( "delete-to-begin-line" ),
+			"meta DELETE", new FlatTextFieldUI.DeleteToEndLineAction( "delete-to-end-line" )
 		} : null;
 
 		Object[] singleLineTextComponentBindings = {
