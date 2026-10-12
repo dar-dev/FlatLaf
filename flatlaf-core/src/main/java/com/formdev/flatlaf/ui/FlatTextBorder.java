@@ -18,6 +18,7 @@ package com.formdev.flatlaf.ui;
 
 import java.awt.Component;
 import javax.swing.UIManager;
+import javax.swing.text.JTextComponent;
 import com.formdev.flatlaf.ui.FlatStylingSupport.Styleable;
 
 /**
@@ -37,7 +38,7 @@ public class FlatTextBorder
 
 	@Override
 	protected int getArc( Component c ) {
-		if( isCellEditor( c ) )
+		if( !(c instanceof JTextComponent) || isCellEditor( c ) )
 			return 0;
 
 		Boolean roundRect = FlatUIUtils.isRoundRect( c );

@@ -35,9 +35,8 @@ subprojects {
 
 
 // initialize toolchain version (default is Java 8)
-val toolchainJavaVersion: String by extra {
-	System.getProperty( "toolchain", "8" )
-}
+val toolchainJavaVersion = System.getProperty( "toolchain", "8" )
+extra["toolchainJavaVersion"] = toolchainJavaVersion
 
 // log version, Gradle and Java versions
 println()
@@ -52,6 +51,7 @@ println()
 plugins {
 	alias( libs.plugins.gradle.nexus.publish.plugin )
 	alias( libs.plugins.gradle.versions.plugin )
+	alias( libs.plugins.caupain )
 	alias( libs.plugins.errorprone ) apply false
 }
 
@@ -168,7 +168,7 @@ allprojects {
 					}
 				}
 
-				// Error Prone requires at lease Java 11
+				// Error Prone requires at least Java 11
 				val java = (project as ExtensionAware).extensions.getByName("java") as JavaPluginExtension
 				val javaToolchains = (project as ExtensionAware).extensions.getByName("javaToolchains") as JavaToolchainService
 				if( java.toolchain.languageVersion.get().asInt() < 11 ) {
@@ -181,6 +181,10 @@ allprojects {
 	}
 }
 
+tasks.named<com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask>("dependencyUpdates") {
+	group = "verification"
+}
+
 nexusPublishing {
 	repositories {
 		sonatype {
@@ -189,8 +193,8 @@ nexusPublishing {
 			snapshotRepositoryUrl = uri( "https://central.sonatype.com/repository/maven-snapshots/" )
 
 			// get from gradle.properties
-			val sonatypeUsername: String? by project
-			val sonatypePassword: String? by project
+			val sonatypeUsername = project.findProperty( "sonatypeUsername" ) as String?
+			val sonatypePassword = project.findProperty( "sonatypePassword" ) as String?
 
 			username = System.getenv( "SONATYPE_USERNAME" ) ?: sonatypeUsername
 			password = System.getenv( "SONATYPE_PASSWORD" ) ?: sonatypePassword

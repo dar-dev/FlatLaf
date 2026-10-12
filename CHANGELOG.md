@@ -15,6 +15,11 @@ FlatLaf Change Log
 
 #### Fixed bugs
 
+- System File Chooser:
+  - Linux: Fixed deadlock when invoking `java.awt.Desktop` methods `open()`,
+    `browse()` or `mail()` after a `SystemFileChooser` was shown at some point
+    prior. (issue #1158)
+- ColorChooser: Do not use rounded border for color palette boxes. (issue #1150)
 - FileChooser:
   - Fixed selection painting in "Details" view when theme uses rounded
     selection. (issue #1137)
@@ -22,10 +27,19 @@ FlatLaf Change Log
 - ScrollPane: When using rounded border and scrollpane width was near view
   width, then the horizontal scrollbar was shown even when it was not necessary.
   (issue #1135)
+- Spinner: For button style `mac` (used in macOS themes), it is now possible to
+  use rounded corners by setting UI property `TextComponent.arc` or styling
+  (e.g. `arc: 4`). (issue #1151)
 - TabbedPane: Titles of disabled tabs were not grayed out if title contains
   HTML. (issue #1143)
 - Make sure that `META-INF/MANIFEST.MF` is first jar entry, so that tools that
   use `JarInputStream` readers see `Multi-Release: true`. (issue #1139)
+- macOS 27: Screen menu bar (`apple.laf.useScreenMenuBar=true`) showed only the
+  Apple menu and the application menu, but no Java menus, until hovering the
+  menu bar or switching to another application and back. This is a macOS issue,
+  which also occurs without FlatLaf, when the menu bar is installed a bit "late"
+  after application launch. FlatLaf now forces a redraw of the screen menu bar
+  (requires FlatLaf native library). (PR #1154, issue #1153)
 - Native libraries: Fixed `IllegalArgumentException: URI has an authority component`
   trying to load native library when running application from a Windows network drive.
   (issue #1145)

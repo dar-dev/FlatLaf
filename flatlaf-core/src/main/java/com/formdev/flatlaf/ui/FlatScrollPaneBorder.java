@@ -77,7 +77,7 @@ public class FlatScrollPaneBorder
 
 	@Override
 	protected int getArc( Component c ) {
-		if( isCellEditor( c ) )
+		if( !(c instanceof JScrollPane) || isCellEditor( c ) )
 			return 0;
 
 		if( isArcStyled )

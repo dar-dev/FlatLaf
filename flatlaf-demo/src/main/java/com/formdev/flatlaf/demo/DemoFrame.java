@@ -66,6 +66,7 @@ import net.miginfocom.swing.*;
 class DemoFrame
 	extends JFrame
 {
+	private int nextWindowNumber = 2;
 	private final String[] availableFontFamilyNames;
 	private int initialFontMenuItemCount = -1;
 
@@ -220,8 +221,30 @@ class DemoFrame
 		System.out.println( directory  );
 	}
 
-	private void exitActionPerformed() {
+	private void cloneWindowActionPerformed() {
+		DemoFrame frame = new DemoFrame();
+		frame.setTitle( frame.getTitle() + " " + nextWindowNumber++ );
+
+		// sync checkbox menu items in Options menu
+		frame.windowDecorationsCheckBoxMenuItem.setModel( windowDecorationsCheckBoxMenuItem.getModel() );
+		frame.menuBarEmbeddedCheckBoxMenuItem.setModel( menuBarEmbeddedCheckBoxMenuItem.getModel() );
+		frame.unifiedTitleBarMenuItem.setModel( unifiedTitleBarMenuItem.getModel() );
+		frame.showTitleBarIconMenuItem.setModel( showTitleBarIconMenuItem.getModel() );
+		frame.underlineMenuSelectionMenuItem.setModel( underlineMenuSelectionMenuItem.getModel() );
+		frame.alwaysShowMnemonicsMenuItem.setModel( alwaysShowMnemonicsMenuItem.getModel() );
+		frame.animatedLafChangeMenuItem.setModel( animatedLafChangeMenuItem.getModel() );
+
+		frame.pack();
+		frame.setLocation( getX() + 100, getY() + 50 );
+		frame.setVisible( true );
+	}
+
+	private void closeWindowActionPerformed() {
 		dispose();
+	}
+
+	private void exitActionPerformed() {
+		System.exit( 0 );
 	}
 
 	private void aboutActionPerformed() {
@@ -281,11 +304,17 @@ class DemoFrame
 			JFrame.setDefaultLookAndFeelDecorated( windowDecorations );
 			JDialog.setDefaultLookAndFeelDecorated( windowDecorations );
 
-			// dispose frame, update decoration and re-show frame
-			dispose();
-			setUndecorated( windowDecorations );
-			getRootPane().setWindowDecorationStyle( windowDecorations ? JRootPane.FRAME : JRootPane.NONE );
-			setVisible( true );
+			for( Window w : Window.getWindows() ) {
+				if( w instanceof DemoFrame ) {
+					DemoFrame frame = (DemoFrame) w;
+
+					// dispose frame, update decoration and re-show frame
+					frame.dispose();
+					frame.setUndecorated( windowDecorations );
+					frame.getRootPane().setWindowDecorationStyle( windowDecorations ? JRootPane.FRAME : JRootPane.NONE );
+					frame.setVisible( true );
+				}
+			}
 		} else {
 			// change window decoration of all frames and dialogs
 			FlatLaf.setUseNativeWindowDecorations( windowDecorations );
@@ -646,7 +675,8 @@ class DemoFrame
 		JMenuItem openSystemMenuItem = new JMenuItem();
 		JMenuItem saveAsSystemMenuItem = new JMenuItem();
 		JMenuItem selectFolderSystemMenuItem = new JMenuItem();
-		JMenuItem closeMenuItem = new JMenuItem();
+		JMenuItem cloneWindowMenuItem = new JMenuItem();
+		JMenuItem closeWindowMenuItem = new JMenuItem();
 		exitMenuItem = new JMenuItem();
 		JMenu editMenu = new JMenu();
 		JMenuItem undoMenuItem = new JMenuItem();
@@ -769,12 +799,17 @@ class DemoFrame
 				fileMenu.add(selectFolderSystemMenuItem);
 				fileMenu.addSeparator();
 
-				//---- closeMenuItem ----
-				closeMenuItem.setText("Close");
-				closeMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
-				closeMenuItem.setMnemonic('C');
-				closeMenuItem.addActionListener(e -> menuItemActionPerformed(e));
-				fileMenu.add(closeMenuItem);
+				//---- cloneWindowMenuItem ----
+				cloneWindowMenuItem.setText("Clone Window");
+				cloneWindowMenuItem.addActionListener(e -> cloneWindowActionPerformed());
+				fileMenu.add(cloneWindowMenuItem);
+
+				//---- closeWindowMenuItem ----
+				closeWindowMenuItem.setText("Close Window");
+				closeWindowMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_W, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask()));
+				closeWindowMenuItem.setMnemonic('C');
+				closeWindowMenuItem.addActionListener(e -> closeWindowActionPerformed());
+				fileMenu.add(closeWindowMenuItem);
 				fileMenu.addSeparator();
 
 				//---- exitMenuItem ----
@@ -1161,7 +1196,7 @@ class DemoFrame
 		usersButton.setIcon( new FlatSVGIcon( "com/formdev/flatlaf/demo/icons/users.svg" ) );
 		usersButton.setButtonType( ButtonType.toolBarButton );
 		usersButton.setFocusable( false );
-		usersButton.addActionListener( e -> JOptionPane.showMessageDialog( null, "Hello User! How are you?", "User", JOptionPane.INFORMATION_MESSAGE ) );
+		usersButton.addActionListener( e -> JOptionPane.showMessageDialog( this, "Hello User! How are you?", "User", JOptionPane.INFORMATION_MESSAGE ) );
 		menuBar.add( Box.createGlue() );
 		menuBar.add( usersButton );
 

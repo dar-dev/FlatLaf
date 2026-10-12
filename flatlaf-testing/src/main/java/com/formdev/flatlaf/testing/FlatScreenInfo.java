@@ -24,6 +24,15 @@ import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
 import java.awt.geom.AffineTransform;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import javax.swing.SwingUtilities;
 
 /**
@@ -65,6 +74,9 @@ public class FlatScreenInfo
 
 		System.out.println( "Java version:   " + System.getProperty( "java.version" ) );
 		System.out.println( "Java vendor:    " + System.getProperty( "java.vendor" ) );
+		System.out.println( "OS name:        " + System.getProperty( "os.name" ) );
+		System.out.println( "OS version:     " + System.getProperty( "os.version" ) );
+		System.out.println( "OS arch:        " + System.getProperty( "os.arch" ) );
 
 		for( GraphicsDevice gd : screenDevices ) {
 			GraphicsConfiguration gc = gd.getDefaultConfiguration();
@@ -116,11 +128,117 @@ public class FlatScreenInfo
 				}
 			}
 		}
+
+		System.out.println();
+		System.out.println();
+
+		// system properties
+		System.out.println( "sun.java2d.uiScale:               " + System.getProperty( "sun.java2d.uiScale" ) );
+		System.out.println( "sun.java2d.uiScale.enabled:       " + System.getProperty( "sun.java2d.uiScale.enabled" ) );
+		System.out.println( "flatlaf.uiScale:                  " + System.getProperty( "flatlaf.uiScale" ) );
+		System.out.println( "flatlaf.uiScale.enabled:          " + System.getProperty( "flatlaf.uiScale.enabled" ) );
+		System.out.println( "flatlaf.uiScale.allowScaleDown:   " + System.getProperty( "flatlaf.uiScale.allowScaleDown" ) );
+		System.out.println( "flatlaf.uiScale.fontSizeDivider:  " + System.getProperty( "flatlaf.uiScale.fontSizeDivider" ) );
+		System.out.println();
+
+		// environment variables
+		System.out.println( "XDG_CURRENT_DESKTOP:       " + System.getenv( "XDG_CURRENT_DESKTOP" ) );
+		System.out.println( "GNOME_DESKTOP_SESSION_ID:  " + System.getenv( "GNOME_DESKTOP_SESSION_ID" ) );
+		System.out.println( "KDE_FULL_SESSION:          " + System.getenv( "KDE_FULL_SESSION" ) );
+		System.out.println( "GDK_SCALE:                 " + System.getenv( "GDK_SCALE" ) );
+		System.out.println( "J2D_UISCALE:               " + System.getenv( "J2D_UISCALE" ) );
+		System.out.println();
+
+		// desktop properties
+		System.out.println( "win.messagebox.font:  " + toolkit.getDesktopProperty( "win.messagebox.font" ) );
+		System.out.println( "win.defaultGUI.font:  " + toolkit.getDesktopProperty( "win.defaultGUI.font" ) );
+		System.out.println( "gnome.Gtk/FontName:   " + toolkit.getDesktopProperty( "gnome.Gtk/FontName" ) );
+		System.out.println();
+
+		// KDE
+		List<String> kdeglobals = readConfig( "kdeglobals" );
+		List<String> kcmfonts = readConfig( "kcmfonts" );
+		List<String> kwinrc = readConfig( "kwinrc" );
+		String generalFont = getConfigEntry( kdeglobals, "General", "font" );
+		String forceFontDPI = getConfigEntry( kcmfonts, "General", "forceFontDPI" );
+		String scale = getConfigEntry( kwinrc, "Xwayland", "Scale" );
+		String screenScaleFactors = getConfigEntry( kdeglobals, "KScreen", "ScreenScaleFactors" );
+		String xwaylandClientsScale = getConfigEntry( kdeglobals, "KScreen", "XwaylandClientsScale" );
+		System.out.println( "kdeglobals: [General]  font:                  " + generalFont );
+		System.out.println( "kcmfonts:   [General]  forceFontDPI:          " + forceFontDPI );
+		System.out.println( "kwinrc:     [Xwayland] Scale:                 " + scale );
+		System.out.println( "kdeglobals: [KScreen]  ScreenScaleFactors:    " + screenScaleFactors );
+		System.out.println( "kdeglobals: [KScreen]  XwaylandClientsScale:  " + xwaylandClientsScale );
 	}
 
 	private static String toString( double scaleX, double scaleY ) {
 		return (scaleX == scaleY)
 			? String.valueOf( scaleX )
 			: scaleX + " / " + scaleY;
+	}
+
+	// copy of LinuxFontPolicy.readConfig()
+	@SuppressWarnings( "MixedMutabilityReturnType" ) // Error Prone
+	private static List<String> readConfig( String filename ) {
+		File userHome = new File( System.getProperty( "user.home" ) );
+
+		// search for config file
+		String[] configDirs = {
+			".config", // KDE 5
+			".kde4/share/config", // KDE 4
+			".kde/share/config"// KDE 3
+		};
+		File file = null;
+		for( String configDir : configDirs ) {
+			file = new File( userHome, configDir + "/" + filename );
+			if( file.isFile() )
+				break;
+		}
+		if( !file.isFile() )
+			return Collections.emptyList();
+
+		// read config file
+		System.out.println( "read " + file );
+		ArrayList<String> lines = new ArrayList<>( 200 );
+		try( BufferedReader reader = new BufferedReader( new InputStreamReader(
+			new FileInputStream( file ), StandardCharsets.US_ASCII ) ) )
+		{
+			String line;
+			while( (line = reader.readLine()) != null )
+				lines.add( line );
+		} catch( IOException ex ) {
+			System.err.println( "FlatLaf: Failed to read '" + filename + "'." );
+			ex.printStackTrace();
+		}
+		return lines;
+	}
+
+	// copy of LinuxFontPolicy.getConfigEntry()
+	private static String getConfigEntry( List<String> config, String group, String key ) {
+		int groupLength = group.length();
+		int keyLength = key.length();
+		boolean inGroup = false;
+		for( String line : config ) {
+			if( !inGroup ) {
+				if( line.length() >= groupLength + 2 &&
+					line.charAt( 0 ) == '[' &&
+					line.charAt( groupLength + 1 ) == ']' &&
+					line.indexOf( group ) == 1 )
+				{
+					inGroup = true;
+				}
+			} else {
+				if( line.startsWith( "[" ) )
+					return null;
+
+				if( line.length() >= keyLength + 2 &&
+					line.charAt( keyLength ) == '=' &&
+					line.startsWith( key ) )
+				{
+					return line.substring( keyLength + 1 );
+				}
+			}
+		}
+		return null;
 	}
 }

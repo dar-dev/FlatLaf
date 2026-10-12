@@ -133,7 +133,7 @@ public class FlatButtonBorder
 
 			Color color = (outlineColor != null) ? outlineColor : getFocusColor( c );
 			// not using focus border painting of paintOutlinedComponent() here
-			// because its round edges look too "thick"
+			// because its round corners look too "thick"
 			FlatUIUtils.paintOutlinedComponent( g2, x, y, width, height, 0, 0, 0, focusWidth, arc, null, color, null );
 		} finally {
 			g2.dispose();
@@ -206,7 +206,7 @@ public class FlatButtonBorder
 
 	@Override
 	protected int getArc( Component c ) {
-		if( isCellEditor( c ) )
+		if( !(c instanceof AbstractButton) || isCellEditor( c ) )
 			return 0;
 
 		switch( FlatButtonUI.getButtonType( c ) ) {

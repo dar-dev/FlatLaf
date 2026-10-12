@@ -29,7 +29,7 @@ jobs:
       - uses: gradle/actions/wrapper-validation@v6
 
       - name: Setup Java 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           java-version: 21
           distribution: temurin  # pre-installed on ubuntu-latest
@@ -59,9 +59,9 @@ jobs:
         if: github.repository == 'JFormDesigner/FlatLaf'
         run: ./gradlew build clean -Dtoolchain=25
 
-      - name: Build with Java 26
+      - name: Build with Java 27
         if: github.repository == 'JFormDesigner/FlatLaf'
-        run: ./gradlew build clean -Dtoolchain=26
+        run: ./gradlew build clean -Dtoolchain=27
 
 
         # build with Java 8 for snapshot
@@ -103,7 +103,7 @@ jobs:
       - uses: actions/checkout@v7
 
       - name: Setup Java 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           java-version: 21
           distribution: temurin  # pre-installed on ubuntu-latest

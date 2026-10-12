@@ -207,11 +207,16 @@ new FormModel {
 						name: "separator2"
 					} )
 					add( new FormComponent( "javax.swing.JMenuItem" ) {
-						name: "closeMenuItem"
-						"text": "Close"
+						name: "cloneWindowMenuItem"
+						"text": "Clone Window"
+						addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "cloneWindowActionPerformed", false ) )
+					} )
+					add( new FormComponent( "javax.swing.JMenuItem" ) {
+						name: "closeWindowMenuItem"
+						"text": "Close Window"
 						"accelerator": static javax.swing.KeyStroke getKeyStroke( 87, 4226, false )
 						"mnemonic": 67
-						addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "menuItemActionPerformed", true ) )
+						addEvent( new FormEvent( "java.awt.event.ActionListener", "actionPerformed", "closeWindowActionPerformed", false ) )
 					} )
 					add( new FormComponent( "javax.swing.JPopupMenu$Separator" ) {
 						name: "separator1"
