@@ -91,10 +91,18 @@ JNIEXPORT jlong JNICALL Java_com_formdev_flatlaf_ui_FlatNativeWindowsLibrary_get
 
 /*
  * Class:     com_formdev_flatlaf_ui_FlatNativeWindowsLibrary
- * Method:    setWindowCornerPreference
+ * Method:    isScreenReaderActive
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_formdev_flatlaf_ui_FlatNativeWindowsLibrary_isScreenReaderActive
+  (JNIEnv *, jclass);
+
+/*
+ * Class:     com_formdev_flatlaf_ui_FlatNativeWindowsLibrary
+ * Method:    dwmSetWindowCornerPreference
  * Signature: (JI)Z
  */
-JNIEXPORT jboolean JNICALL Java_com_formdev_flatlaf_ui_FlatNativeWindowsLibrary_setWindowCornerPreference
+JNIEXPORT jboolean JNICALL Java_com_formdev_flatlaf_ui_FlatNativeWindowsLibrary_dwmSetWindowCornerPreference
   (JNIEnv *, jclass, jlong, jint);
 
 /*
@@ -112,6 +120,14 @@ JNIEXPORT jboolean JNICALL Java_com_formdev_flatlaf_ui_FlatNativeWindowsLibrary_
  */
 JNIEXPORT jboolean JNICALL Java_com_formdev_flatlaf_ui_FlatNativeWindowsLibrary_dwmSetWindowAttributeDWORD
   (JNIEnv *, jclass, jlong, jint, jint);
+
+/*
+ * Class:     com_formdev_flatlaf_ui_FlatNativeWindowsLibrary
+ * Method:    isDwmRoundedCornersSupported
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_formdev_flatlaf_ui_FlatNativeWindowsLibrary_isDwmRoundedCornersSupported
+  (JNIEnv *, jclass);
 
 /*
  * Class:     com_formdev_flatlaf_ui_FlatNativeWindowsLibrary

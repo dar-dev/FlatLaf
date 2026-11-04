@@ -31,7 +31,7 @@ import com.formdev.flatlaf.util.SystemInfo;
  */
 public class FlatNativeWindowsLibrary
 {
-	private static int API_VERSION_WINDOWS = 1003;
+	private static int API_VERSION_WINDOWS = 1005;
 
 	private static long osBuildNumber = Long.MIN_VALUE;
 
@@ -81,6 +81,16 @@ public class FlatNativeWindowsLibrary
 	public native static long getHWND( Window window );
 
 	/**
+	 * Checks whether a screen reader (e.g. NVDA, JAWS or Narrator) is running.
+	 * <p>
+	 * Invokes Win32 API method {@code SystemParametersInfo(SPI_GETSCREENREADER)}.
+	 * See https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-systemparametersinfow
+	 *
+	 * @since 3.8
+	 */
+	public native static boolean isScreenReaderActive();
+
+	/**
 	 * DWM_WINDOW_CORNER_PREFERENCE
 	 * see https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/ne-dwmapi-dwm_window_corner_preference
 	 */
@@ -99,8 +109,10 @@ public class FlatNativeWindowsLibrary
 	 * See https://learn.microsoft.com/en-us/windows/win32/api/dwmapi/nf-dwmapi-dwmsetwindowattribute
 	 * <p>
 	 * Supported since Windows 11 Build 22000.
+	 *
+	 * @since 3.8
 	 */
-	public native static boolean setWindowCornerPreference( long hwnd, int cornerPreference );
+	public native static boolean dwmSetWindowCornerPreference( long hwnd, int cornerPreference );
 
 	/**
 	 * DWMWINDOWATTRIBUTE
@@ -159,6 +171,24 @@ public class FlatNativeWindowsLibrary
 		// DwmSetWindowAttribute() expects COLORREF as attribute value, which is defined as DWORD
 		return dwmSetWindowAttributeDWORD( hwnd, attribute, rgb );
 	}
+
+	/**
+	 * Checks whether DWM (Desktop Window Manager) rounds window corners
+	 * (and paints border and drop shadow) for windows that use
+	 * {@link #dwmSetWindowCornerPreference(long, int)}.
+	 * <p>
+	 * It does not if:
+	 * <ul>
+	 *   <li>the desktop is rendered with WARP software rendering (e.g. in VMs without 3D acceleration),
+	 *       unless registry value {@code HKLM\Software\Microsoft\Windows\Dwm\ForceEffectMode} is 2
+	 *   <li>running in remote session
+	 * </ul>
+	 * <p>
+	 * Supported since Windows 11 Build 22000.
+	 *
+	 * @since 3.8
+	 */
+	public native static boolean isDwmRoundedCornersSupported();
 
 
 	/**

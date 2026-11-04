@@ -243,6 +243,8 @@ Applications using FlatLaf
   wrapper
 - [Linotte](https://github.com/cpc6128/LangageLinotte) - French programming
   language created to learn programming
+- [LogViewer](https://github.com/tibagni/LogViewer) - visual Android log and
+  bugreport analysis tool
 - [lsfusion platform](https://github.com/lsfusion/platform) - information
   systems development platform
 - [muCommander](https://github.com/mucommander/mucommander) - lightweight
@@ -343,7 +345,7 @@ Applications using FlatLaf
 - ![Sponsor](images/sponsor.svg)
   [j-lawyer](https://github.com/jlawyerorg/j-lawyer-org) - Kanzleisoftware
 - ![Sponsor](images/sponsor.svg) [Lisheane ERP](https://www.lisheane.ch/)
-  (**commercial**) - backoffice applikation
+  (**commercial**) - backoffice application
 - [mendelson AS2](https://sourceforge.net/projects/mec-as2/),
   [AS4](https://sourceforge.net/projects/mendelson-as4/) and
   [OFTP2](https://sourceforge.net/projects/mendelson-oftp2/) (open-source) and

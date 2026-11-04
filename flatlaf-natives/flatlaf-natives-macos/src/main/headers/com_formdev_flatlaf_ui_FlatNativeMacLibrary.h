@@ -57,6 +57,14 @@ JNIEXPORT jboolean JNICALL Java_com_formdev_flatlaf_ui_FlatNativeMacLibrary_setW
 
 /*
  * Class:     com_formdev_flatlaf_ui_FlatNativeMacLibrary
+ * Method:    disableWindowAnimation
+ * Signature: (Ljava/awt/Window;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_formdev_flatlaf_ui_FlatNativeMacLibrary_disableWindowAnimation
+  (JNIEnv *, jclass, jobject);
+
+/*
+ * Class:     com_formdev_flatlaf_ui_FlatNativeMacLibrary
  * Method:    setWindowButtonsSpacing
  * Signature: (Ljava/awt/Window;I)Z
  */
@@ -94,6 +102,22 @@ JNIEXPORT jboolean JNICALL Java_com_formdev_flatlaf_ui_FlatNativeMacLibrary_togg
  */
 JNIEXPORT jboolean JNICALL Java_com_formdev_flatlaf_ui_FlatNativeMacLibrary_refreshScreenMenuBar
   (JNIEnv *, jclass);
+
+/*
+ * Class:     com_formdev_flatlaf_ui_FlatNativeMacLibrary
+ * Method:    setupFullWindowContentTitleBarCaption
+ * Signature: (Ljava/awt/Window;Lcom/formdev/flatlaf/ui/FlatNativeMacLibrary/FullWindowContentTitleBarCaptionCallback;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_formdev_flatlaf_ui_FlatNativeMacLibrary_setupFullWindowContentTitleBarCaption
+  (JNIEnv *, jclass, jobject, jobject);
+
+/*
+ * Class:     com_formdev_flatlaf_ui_FlatNativeMacLibrary
+ * Method:    removeFullWindowContentTitleBarCaption
+ * Signature: (Ljava/awt/Window;)Z
+ */
+JNIEXPORT jboolean JNICALL Java_com_formdev_flatlaf_ui_FlatNativeMacLibrary_removeFullWindowContentTitleBarCaption
+  (JNIEnv *, jclass, jobject);
 
 /*
  * Class:     com_formdev_flatlaf_ui_FlatNativeMacLibrary

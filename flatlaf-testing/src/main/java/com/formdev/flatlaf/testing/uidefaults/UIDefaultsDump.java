@@ -62,6 +62,7 @@ import javax.swing.table.JTableHeader;
 import com.formdev.flatlaf.*;
 import com.formdev.flatlaf.demo.intellijthemes.IJThemesDump;
 import com.formdev.flatlaf.intellijthemes.FlatAllIJThemes;
+import com.formdev.flatlaf.testing.FlatStyleableInfosDump;
 import com.formdev.flatlaf.testing.FlatTestLaf;
 import com.formdev.flatlaf.themes.*;
 import com.formdev.flatlaf.ui.FlatLineBorder;
@@ -150,6 +151,9 @@ public class UIDefaultsDump
 
 		// dump UI keys
 		UIDefaultsKeysDump.main( new String[0] );
+
+		// dump styleable infos
+		FlatStyleableInfosDump.main( new String[0] );
 	}
 
 	@SuppressWarnings( "unused" )
@@ -765,6 +769,10 @@ public class UIDefaultsDump
 			}
 
 			switch( borderClassName ) {
+				case "com.formdev.flatlaf.ui.FlatScrollPaneBorder":
+					c = new JScrollPane();
+					break;
+
 				case "com.apple.laf.AquaToolBarUI$ToolBarBorder":
 				case "org.pushingpixels.radiance.theming.internal.utils.border.RadianceToolBarBorder":
 					c = new JToolBar();

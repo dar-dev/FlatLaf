@@ -54,11 +54,13 @@ import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.UIDefaults.ActiveValue;
 import javax.swing.UIDefaults.LazyValue;
+import javax.swing.plaf.BorderUIResource;
 import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.DimensionUIResource;
 import javax.swing.plaf.InsetsUIResource;
 import com.formdev.flatlaf.ui.FlatEmptyBorder;
 import com.formdev.flatlaf.ui.FlatLineBorder;
+import com.formdev.flatlaf.ui.FlatMatteBorder;
 import com.formdev.flatlaf.util.ColorFunctions;
 import com.formdev.flatlaf.util.ColorFunctions.ColorFunction;
 import com.formdev.flatlaf.util.DerivedColor;
@@ -146,6 +148,13 @@ class UIDefaultsLoader
 				}
 
 				return super.put( key, value );
+			}
+
+			@Override
+			public synchronized void putAll( Map<?, ?> t ) {
+				// necessary because super.putAll() does not invoke put() in Java 9+
+				for( Map.Entry<?, ?> e : t.entrySet() )
+					put( e.getKey(), e.getValue() );
 			}
 		};
 	}
@@ -688,19 +697,49 @@ class UIDefaultsLoader
 	private static Object parseBorder( String value, Function<String, String> resolver, List<ClassLoader> addonClassLoaders )
 		throws IllegalArgumentException
 	{
-		if( value.indexOf( ',' ) >= 0 ) {
+		int paramsStart;
+		if( value.endsWith( ")" ) &&
+			(paramsStart = value.indexOf( '(' )) > 0 &&
+			Character.isLetter( value.charAt( 0 ) ) &&
+			value.lastIndexOf( '.', paramsStart ) < 0 ) // if it contains a dot before '(', then it is an instance
+		{
+			// border functions
+			// Syntax: function1(...)[, function2(...)[, ...[]
+			// (multiple functions build a compound border; first function is outermost border)
+			List<String> functions = splitFunctionParams( value, ',' );
+			try {
+				if( functions.size() == 1 )
+					return parseBorderFunction( functions.get( 0 ), resolver );
+
+				List<LazyValue> borders = new ArrayList<>( functions.size() );
+				for( String function : functions )
+					borders.add( parseBorderFunction( function, resolver ) );
+
+				// nest compound borders from inside to outside
+				// (e.g. "a b c" --> compound(a, compound(b, c)))
+				return (LazyValue) t -> {
+					int last = borders.size() - 1;
+					Border border = (Border) borders.get( last ).createValue( t );
+					for( int i = last - 1; i >= 0; i-- )
+						border = new BorderUIResource.CompoundBorderUIResource( (Border) borders.get( i ).createValue( t ), border );
+					return border;
+				};
+			} catch( RuntimeException ex ) {
+				throw new IllegalArgumentException( "invalid border '" + value + "' (" + ex.getMessage() + ")" );
+			}
+		} else if( !Character.isLetter( value.charAt( 0 ) ) ) {
 			// Syntax: top,left,bottom,right[,lineColor[,lineThickness[,arc]]]
-			List<String> parts = splitFunctionParams( value, ',' );
+			List<String> params = splitFunctionParams( value, ',' );
 			try {
 				Insets insets = parseInsets( value );
-				ColorUIResource lineColor = (parts.size() >= 5 && !parts.get( 4 ).isEmpty())
-					? (ColorUIResource) parseColorOrFunction( resolver.apply( parts.get( 4 ) ), resolver )
+				ColorUIResource lineColor = (params.size() > 4 && !params.get( 4 ).isEmpty())
+					? (ColorUIResource) parseColorOrFunction( resolver.apply( params.get( 4 ) ), resolver )
 					: null;
-				float lineThickness = (parts.size() >= 6 && !parts.get( 5 ).isEmpty())
-					? parseFloat( parts.get( 5 ) )
-					: 1f;
-				int arc = (parts.size() >= 7) && !parts.get( 6 ).isEmpty()
-					? parseInteger( parts.get( 6 ) )
+				float lineThickness = (params.size() > 5 && !params.get( 5 ).isEmpty())
+					? parseFloat( params.get( 5 ) )
+					: (lineColor != null ? 1f : 0);
+				int arc = (params.size() > 6) && !params.get( 6 ).isEmpty()
+					? parseInteger( params.get( 6 ) )
 					: -1;
 
 				return (LazyValue) t -> {
@@ -711,30 +750,124 @@ class UIDefaultsLoader
 			} catch( RuntimeException ex ) {
 				throw new IllegalArgumentException( "invalid border '" + value + "' (" + ex.getMessage() + ")" );
 			}
-		} else
+		} else {
+			// Syntax: className[(param1,param2,...)] or className[,param1,param2,...]
 			return parseInstance( value, resolver, addonClassLoaders );
+		}
+	}
+
+	private static LazyValue parseBorderFunction( String value, Function<String, String> resolver )
+		throws IllegalArgumentException
+	{
+		int paramsStart = value.indexOf( '(' );
+		if( paramsStart < 0 )
+			throw new IllegalArgumentException( "missing opening parenthesis in function '" + value + "'" );
+
+		String function = StringUtils.substringTrimmed( value, 0, paramsStart );
+		List<String> params = splitFunctionParams( value.substring( paramsStart + 1, value.length() - 1 ), ',' );
+		if( params.isEmpty() )
+			throw newMissingParametersException( value );
+
+		switch( function ) {
+			case "empty":	return parseBorderEmpty( params );
+			case "line":	return parseBorderLine( params, resolver );
+			case "matte":	return parseBorderMatte( params, resolver );
+		}
+
+		throw new IllegalArgumentException( "unknown border function '" + value + "'" );
+	}
+
+	/**
+	 * Syntax: empty(top,left,bottom,right)
+	 */
+	private static LazyValue parseBorderEmpty( List<String> params )
+		throws IllegalArgumentException
+	{
+		Insets insets = parseInsets( params );
+		return (LazyValue) t -> new FlatEmptyBorder( insets );
+	}
+
+	/**
+	 * Syntax: line([top,left,bottom,right,][lineColor[,lineThickness[,arc]]])
+	 */
+	private static LazyValue parseBorderLine( List<String> params, Function<String, String> resolver )
+		throws IllegalArgumentException
+	{
+		boolean hasInsets = !params.get( 0 ).isEmpty() && Character.isDigit( params.get( 0 ).charAt( 0 ) );
+		int i = hasInsets ? 4 : 0; // index of lineColor
+		ColorUIResource lineColor = !params.get( i ).isEmpty()
+			? (ColorUIResource) parseColorOrFunction( resolver.apply( params.get( i ) ), resolver )
+			: null;
+		float lineThickness = (params.size() > i + 1 && !params.get( i + 1 ).isEmpty())
+			? parseFloat( params.get( i + 1 ) )
+			: (lineColor != null ? 1f : 0);
+		int arc = (params.size() > i + 2 && !params.get( i + 2 ).isEmpty())
+			? parseInteger( params.get( i + 2 ) )
+			: -1;
+
+		Insets insets;
+		if( hasInsets )
+			insets = parseInsets( params );
+		else {
+			// insets are equal to line thickness (rounded up)
+			int width = (int) Math.ceil( lineThickness );
+			insets = new Insets( width, width, width, width );
+		}
+		return (LazyValue) t -> new FlatLineBorder( insets, lineColor, lineThickness, arc );
+	}
+
+	/**
+	 * Syntax: matte(top,left,bottom,right,matteColor)
+	 */
+	private static LazyValue parseBorderMatte( List<String> params, Function<String, String> resolver )
+		throws IllegalArgumentException
+	{
+		Insets insets = parseInsets( params );
+		ColorUIResource matteColor = (ColorUIResource) parseColorOrFunction( resolver.apply( params.get( 4 ) ), resolver );
+		return (LazyValue) t -> new FlatMatteBorder( insets, matteColor );
 	}
 
 	private static Object parseInstance( String value, Function<String, String> resolver, List<ClassLoader> addonClassLoaders ) {
 		return (LazyValue) t -> {
 			try {
-				if( value.indexOf( ',' ) >= 0 ) {
-					// Syntax: className,param1,param2,...
-					List<String> parts = splitFunctionParams( value, ',' );
-					String className = parts.get( 0 );
-					Class<?> cls = findClass( className, addonClassLoaders );
+				String className;
+				List<String> params;
 
+				if( value.endsWith( ")" ) ) {
+					// Syntax: className(param1,param2,...)
+					int paramsStart = value.indexOf( '(' );
+					if( paramsStart < 0 )
+						throw new IllegalArgumentException( "missing opening parenthesis in function '" + value + "'" );
+
+					className = StringUtils.substringTrimmed( value, 0, paramsStart );
+					params = splitFunctionParams( value.substring( paramsStart + 1, value.length() - 1 ), ',' );
+				} else if( value.indexOf( ',' ) >= 0 ) {
+					// Syntax: className,param1,param2,...
+					// (for compatibility)
+					params = splitFunctionParams( value, ',' );
+					className = params.remove( 0 );
+				} else {
+					className = value;
+					params = null;
+				}
+
+				Class<?> cls = findClass( className, addonClassLoaders );
+
+				if( params != null && !params.isEmpty() ) {
 					Constructor<?>[] constructors = cls.getDeclaredConstructors();
-					Object result = invokeConstructorOrStaticMethod( constructors, parts, resolver );
+					Object result = invokeConstructorOrStaticMethod( constructors, params, resolver );
 					if( result != null )
 						return result;
 
+					String parmsString = value.endsWith( ")" )
+						? value.substring( value.indexOf( '(' ) + 1, value.length() - 1 )
+						: value.substring( value.indexOf( ',' ) + 1 );
 					LoggingFacade.INSTANCE.logSevere( "FlatLaf: Failed to instantiate '" + className
 						+ "': no constructor found for parameters '"
-						+ value.substring( value.indexOf( ',' + 1 ) ) + "'.", null );
+						+ parmsString + "'.", null );
 					return null;
 				} else
-					return findClass( value, addonClassLoaders ).getDeclaredConstructor().newInstance();
+					return cls.getDeclaredConstructor().newInstance();
 			} catch( Exception ex ) {
 				LoggingFacade.INSTANCE.logSevere( "FlatLaf: Failed to instantiate '" + value + "'.", ex );
 				return null;
@@ -775,6 +908,12 @@ class UIDefaultsLoader
 		throws IllegalArgumentException
 	{
 		List<String> numbers = StringUtils.split( value, ',', true, false );
+		return parseInsets( numbers );
+	}
+
+	private static Insets parseInsets( List<String> numbers )
+		throws IllegalArgumentException
+	{
 		try {
 			return new InsetsUIResource(
 				Integer.parseInt( numbers.get( 0 ) ),
@@ -782,7 +921,7 @@ class UIDefaultsLoader
 				Integer.parseInt( numbers.get( 2 ) ),
 				Integer.parseInt( numbers.get( 3 ) ) );
 		} catch( NumberFormatException | IndexOutOfBoundsException ex ) {
-			throw new IllegalArgumentException( "invalid insets '" + value + "'" );
+			throw new IllegalArgumentException( "invalid insets '" + String.join( ",", numbers ) + "'" );
 		}
 	}
 
@@ -912,6 +1051,8 @@ class UIDefaultsLoader
 				case "contrast":		return parseColorContrast( params, resolver );
 				case "over":			return parseColorOver( params, resolver );
 			}
+		} catch( IndexOutOfBoundsException ex ) {
+			throw newMissingParametersException( value );
 		} finally {
 			parseColorDepth--;
 		}
@@ -1625,7 +1766,7 @@ class UIDefaultsLoader
 	}
 
 	private static Object invokeConstructorOrStaticMethod( Executable[] constructorsOrMethods,
-			List<String> parts, Function<String, String> resolver )
+			List<String> params, Function<String, String> resolver )
 		throws Exception
 	{
 		// order constructors/methods by parameter types:
@@ -1662,46 +1803,46 @@ class UIDefaultsLoader
 
 		// search for best constructor/method for given parameter values
 		for( Executable cm : constructorsOrMethods ) {
-			if( cm.getParameterCount() != parts.size() - 1 )
+			if( cm.getParameterCount() != params.size() )
 				continue;
 
-			Object[] params = parseMethodParams( cm.getParameterTypes(), parts, resolver );
-			if( params == null )
+			Object[] paramValues = parseMethodParams( cm.getParameterTypes(), params, resolver );
+			if( paramValues == null )
 				continue;
 
 			// invoke constructor or static method
 			if( cm instanceof Constructor )
-				return ((Constructor<?>)cm).newInstance( params );
+				return ((Constructor<?>)cm).newInstance( paramValues );
 			else
-				return ((Method)cm).invoke( null, params );
+				return ((Method)cm).invoke( null, paramValues );
 		}
 
 		return null;
 	}
 
-	private static Object[] parseMethodParams( Class<?>[] paramTypes, List<String> parts, Function<String, String> resolver ) {
-		Object[] params = new Object[paramTypes.length];
+	private static Object[] parseMethodParams( Class<?>[] paramTypes, List<String> params, Function<String, String> resolver ) {
+		Object[] paramValues = new Object[paramTypes.length];
 		try {
-			for( int i = 0; i < params.length; i++ ) {
+			for( int i = 0; i < paramValues.length; i++ ) {
 				Class<?> paramType = paramTypes[i];
-				String paramValue = parts.get( i + 1 );
+				String paramValue = params.get( i );
 				if( paramType == String.class )
-					params[i] = paramValue;
+					paramValues[i] = paramValue;
 				else if( paramType == boolean.class )
-					params[i] = parseBoolean( paramValue );
+					paramValues[i] = parseBoolean( paramValue );
 				else if( paramType == int.class )
-					params[i] = parseInteger( paramValue );
+					paramValues[i] = parseInteger( paramValue );
 				else if( paramType == float.class )
-					params[i] = parseFloat( paramValue );
+					paramValues[i] = parseFloat( paramValue );
 				else if( paramType == Color.class )
-					params[i] = parseColorOrFunction( resolver.apply( paramValue ), resolver );
+					paramValues[i] = parseColorOrFunction( resolver.apply( paramValue ), resolver );
 				else
 					return null; // unsupported parameter type
 			}
 		} catch( IllegalArgumentException ex ) {
 			return null; // failed to parse parameter for expected parameter type
 		}
-		return params;
+		return paramValues;
 	}
 
 	/**

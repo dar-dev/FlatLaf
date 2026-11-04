@@ -488,12 +488,12 @@ public class FlatUIUtils
 	 * Returns the scaled arc diameter of the border for the given component.
 	 */
 	public static float getBorderArc( JComponent c ) {
-		if( c.getBorder() instanceof FlatLineBorder )
-			return UIScale.scale( ((FlatLineBorder)c.getBorder()).getArc() );
+		Border border = getOutsideBorder( c );
+		if( border instanceof FlatLineBorder )
+			return UIScale.scale( ((FlatLineBorder)border).getArc() );
 
-		FlatBorder border = getOutsideFlatBorder( c );
-		return (border != null)
-			? UIScale.scale( (float) border.getArc( c ) )
+		return (border instanceof FlatBorder)
+			? UIScale.scale( (float) ((FlatBorder)border).getArc( c ) )
 			: 0;
 	}
 
@@ -502,14 +502,18 @@ public class FlatUIUtils
 	}
 
 	public static FlatBorder getOutsideFlatBorder( JComponent c ) {
+		Border border = getOutsideBorder( c );
+		return (border instanceof FlatBorder) ? (FlatBorder) border : null;
+	}
+
+	/** @since 3.8 */
+	public static Border getOutsideBorder( JComponent c ) {
 		Border border = c.getBorder();
 		for(;;) {
-			if( border instanceof FlatBorder )
-				return (FlatBorder) border;
-			else if( border instanceof CompoundBorder )
+			if( border instanceof CompoundBorder )
 				border = ((CompoundBorder)border).getOutsideBorder();
 			else
-				return null;
+				return border;
 		}
 	}
 
@@ -835,6 +839,10 @@ public class FlatUIUtils
 		}
 	}
 
+	static final int
+		FLAG_EXTRA_HPIXEL = (1 << 24),	// increase width by 1 device pixel
+		FLAG_EXTRA_VPIXEL = (1 << 25);	// increase height by 1 device pixel
+
 	/**
 	 * Paints a selection.
 	 * <p>
@@ -860,6 +868,10 @@ public class FlatUIUtils
 				// paint at scale 1x to avoid clipping on right and bottom edges at 125%, 150% or 175%
 				HiDPIUtils.paintAtScale1x( g, x, y, width, height,
 					(g2d, x2, y2, width2, height2, scaleFactor) -> {
+						if( (flags & FLAG_EXTRA_HPIXEL) != 0 && (insets == null || insets.right == 0) )
+							width2++;
+						if( (flags & FLAG_EXTRA_VPIXEL) != 0 && (insets == null || insets.bottom == 0) )
+							height2++;
 						paintRoundedSelectionImpl( g2d, x2, y2, width2, height2,
 							(float) (arcTopLeft * scaleFactor), (float) (arcTopRight * scaleFactor),
 							(float) (arcBottomLeft * scaleFactor), (float) (arcBottomRight * scaleFactor) );

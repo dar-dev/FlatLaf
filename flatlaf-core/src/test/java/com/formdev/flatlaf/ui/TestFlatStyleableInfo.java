@@ -562,6 +562,8 @@ public class TestFlatStyleableInfo
 			//---- icon ----
 
 			"icon.scale", float.class,
+			"icon.xOffset", float.class,
+			"icon.yOffset", float.class,
 
 			"icon.focusWidth", float.class,
 			"icon.focusColor", Color.class,
@@ -704,6 +706,8 @@ public class TestFlatStyleableInfo
 			"thumbSize", Dimension.class,
 			"focusWidth", int.class,
 			"thumbBorderWidth", float.class,
+			"trackArc", int.class,
+			"thumbArc", int.class,
 
 			"trackValueColor", Color.class,
 			"trackColor", Color.class,
@@ -764,6 +768,7 @@ public class TestFlatStyleableInfo
 			"oneTouchArrowColor", Color.class,
 			"oneTouchHoverArrowColor", Color.class,
 			"oneTouchPressedArrowColor", Color.class,
+			"oneTouchButtonsPlacement", String.class,
 
 			"style", String.class,
 			"gripColor", Color.class,
@@ -1281,6 +1286,8 @@ public class TestFlatStyleableInfo
 	private void flatCheckBoxIcon( Map<String, Class<?>> expected ) {
 		expectedMap( expected,
 			"scale", float.class,
+			"xOffset", float.class,
+			"yOffset", float.class,
 
 			"focusWidth", float.class,
 			"focusColor", Color.class,

@@ -334,23 +334,10 @@ public class FlatRootPaneUI
 		if( !SystemInfo.isMacOS )
 			return;
 
-		// set window buttons spacing
-		if( isMacButtonsSpacingSupported() && rootPane.isDisplayable() ) {
-			int buttonsSpacing = FlatNativeMacLibrary.BUTTONS_SPACING_DEFAULT;
-			String value = (String) rootPane.getClientProperty( FlatClientProperties.MACOS_WINDOW_BUTTONS_SPACING );
-			if( value != null ) {
-				switch( value ) {
-					case FlatClientProperties.MACOS_WINDOW_BUTTONS_SPACING_MEDIUM:
-						buttonsSpacing = FlatNativeMacLibrary.BUTTONS_SPACING_MEDIUM;
-						break;
-
-					case FlatClientProperties.MACOS_WINDOW_BUTTONS_SPACING_LARGE:
-						buttonsSpacing = FlatNativeMacLibrary.BUTTONS_SPACING_LARGE;
-						break;
-				}
-			}
-
-			FlatNativeMacLibrary.setWindowButtonsSpacing( getParentWindow( rootPane ), buttonsSpacing );
+		// install title bar caption and set window buttons spacing
+		if( FullWindowContentSupport.isMacFullWindowContentEnabled( rootPane ) ) {
+			FullWindowContentSupport.macInstallTitleBarCaption( rootPane );
+			macSetWindowButtonsSpacing();
 		}
 
 		// update buttons bounds client property
@@ -361,13 +348,16 @@ public class FlatRootPaneUI
 		if( !SystemInfo.isMacOS )
 			return;
 
+		// uninstall title bar caption (even if switching to another FlatLaf theme)
+		if( FullWindowContentSupport.isMacFullWindowContentEnabled( rootPane ) )
+			FullWindowContentSupport.macUninstallTitleBarCaption( rootPane );
+
 		// do not uninstall when switching to another FlatLaf theme
 		if( UIManager.getLookAndFeel() instanceof FlatLaf )
 			return;
 
 		// reset window buttons spacing
-		if( isMacButtonsSpacingSupported() )
-			FlatNativeMacLibrary.setWindowButtonsSpacing( getParentWindow( rootPane ), FlatNativeMacLibrary.BUTTONS_SPACING_DEFAULT );
+		macResetWindowButtonsSpacing();
 
 		// remove buttons bounds client property
 		FullWindowContentSupport.macUninstallFullWindowContentButtonsBoundsProperty( rootPane );
@@ -375,6 +365,34 @@ public class FlatRootPaneUI
 
 	private boolean isMacButtonsSpacingSupported() {
 		return SystemInfo.isMacOS && SystemInfo.isJava_17_orLater && FlatNativeMacLibrary.isLoaded();
+	}
+
+	private void macSetWindowButtonsSpacing() {
+		if( !isMacButtonsSpacingSupported() || !rootPane.isDisplayable() )
+			return;
+
+		int buttonsSpacing = FlatNativeMacLibrary.BUTTONS_SPACING_DEFAULT;
+		String value = (String) rootPane.getClientProperty( FlatClientProperties.MACOS_WINDOW_BUTTONS_SPACING );
+		if( value != null ) {
+			switch( value ) {
+				case FlatClientProperties.MACOS_WINDOW_BUTTONS_SPACING_MEDIUM:
+					buttonsSpacing = FlatNativeMacLibrary.BUTTONS_SPACING_MEDIUM;
+					break;
+
+				case FlatClientProperties.MACOS_WINDOW_BUTTONS_SPACING_LARGE:
+					buttonsSpacing = FlatNativeMacLibrary.BUTTONS_SPACING_LARGE;
+					break;
+			}
+		}
+
+		FlatNativeMacLibrary.setWindowButtonsSpacing( getParentWindow( rootPane ), buttonsSpacing );
+	}
+
+	private void macResetWindowButtonsSpacing() {
+		if( !isMacButtonsSpacingSupported() )
+			return;
+
+		FlatNativeMacLibrary.setWindowButtonsSpacing( getParentWindow( rootPane ), FlatNativeMacLibrary.BUTTONS_SPACING_DEFAULT );
 	}
 
 	private void macSetWindowAppearance( JRootPane c ) {
@@ -481,7 +499,7 @@ public class FlatRootPaneUI
 		}
 	}
 
-	private Window getParentWindow( JRootPane c ) {
+	static Window getParentWindow( JRootPane c ) {
 		// not using SwingUtilities.windowForComponent() or SwingUtilities.getWindowAncestor()
 		// here because root panes may be nested and used anywhere (e.g. in JInternalFrame)
 		// but we're only interested in the "root" root pane, which is a direct child of the window
@@ -584,6 +602,10 @@ public class FlatRootPaneUI
 				macUninstallScreenMenuBarRefreshListener( rootPane );
 				macInstallScreenMenuBarRefreshListener( rootPane );
 
+				// native window is going to be disposed --> release native resources
+				if( e.getOldValue() instanceof Window && FullWindowContentSupport.isMacFullWindowContentEnabled( rootPane ) )
+					FullWindowContentSupport.macUninstallTitleBarCaption( rootPane );
+
 				// FlatNativeMacLibrary.setWindowButtonsSpacing() and
 				// FullWindowContentSupport.macUpdateFullWindowContentButtonsBoundsProperty()
 				// require a native window, but setting the client properties
@@ -599,8 +621,17 @@ public class FlatRootPaneUI
 				break;
 
 			case "apple.awt.fullWindowContent":
-				if( SystemInfo.isMacFullWindowContentSupported )
+				if( SystemInfo.isMacFullWindowContentSupported ) {
+					if( FullWindowContentSupport.isMacFullWindowContentEnabled( rootPane ) ) {
+						FullWindowContentSupport.macInstallTitleBarCaption( rootPane );
+						macSetWindowButtonsSpacing();
+					} else {
+						FullWindowContentSupport.macUninstallTitleBarCaption( rootPane );
+						macResetWindowButtonsSpacing();
+					}
+
 					FullWindowContentSupport.macUpdateFullWindowContentButtonsBoundsProperty( rootPane );
+				}
 				break;
 		}
 	}

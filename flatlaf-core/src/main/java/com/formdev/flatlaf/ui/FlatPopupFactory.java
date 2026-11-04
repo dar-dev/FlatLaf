@@ -44,6 +44,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 import javax.swing.JComponent;
 import javax.swing.JLayeredPane;
@@ -120,8 +121,8 @@ public class FlatPopupFactory
 		}
 
 		// Windows 11 with FlatLaf native library can use rounded corners and shows drop shadow for heavy weight popups
-		if( isWindows11BorderSupported() &&
-			getBorderCornerRadius( owner, contents ) > 0 )
+		if( getBorderCornerRadius( owner, contents ) > 0 &&
+			isWindows11BorderSupported() )
 		{
 			NonFlashingPopup popup = new NonFlashingPopup( getPopupForScreenOfOwner( owner, contents, x, y, true ), owner, contents );
 			if( popup.popupWindow != null )
@@ -171,7 +172,7 @@ public class FlatPopupFactory
 				popupWindow.getGraphicsConfiguration() == owner.getGraphicsConfiguration() )
 			  return popup;
 
-			// avoid endless loop (should newer happen; PopupFactory cache size is 5)
+			// avoid endless loop (should never happen; PopupFactory cache size is 5)
 			if( ++count > 10 )
 				return popup;
 
@@ -359,7 +360,20 @@ public class FlatPopupFactory
 	private static boolean isWindows11BorderSupported() {
 		return SystemInfo.isWindows_11_orLater &&
 			FlatSystemProperties.getBoolean( FlatSystemProperties.USE_ROUNDED_POPUP_BORDER, true ) &&
-			FlatNativeWindowsLibrary.isLoaded();
+			FlatNativeWindowsLibrary.isLoaded() &&
+			isDwmRoundedCornersSupported();
+	}
+
+	private static boolean dwmRoundedCornersSupported;
+	private static int dwmRoundedCornersScreenDevicesHashCode;
+
+	private static boolean isDwmRoundedCornersSupported() {
+		int screenDevicesHashCode = Arrays.hashCode( GraphicsEnvironment.getLocalGraphicsEnvironment().getScreenDevices() );
+		if( screenDevicesHashCode != dwmRoundedCornersScreenDevicesHashCode ) {
+			dwmRoundedCornersSupported = FlatNativeWindowsLibrary.isDwmRoundedCornersSupported();
+			dwmRoundedCornersScreenDevicesHashCode = screenDevicesHashCode;
+		}
+		return dwmRoundedCornersSupported;
 	}
 
 	private static boolean isMacOSBorderSupported() {
@@ -393,17 +407,23 @@ public class FlatPopupFactory
 		} else
 			borderColor = null; // use system default color
 
+		runWhenNativeWindowCreated( popupWindow, () -> {
+			setupRoundedBorderImpl( popupWindow, borderCornerRadius, borderWidth, borderColor );
+		} );
+	}
+
+	private static void runWhenNativeWindowCreated( Window popupWindow, Runnable runnable ) {
 		if( popupWindow.isDisplayable() ) {
 			// native window already created
-			setupRoundedBorderImpl( popupWindow, borderCornerRadius, borderWidth, borderColor );
+			runnable.run();
 		} else {
-			// native window not yet created --> add listener to set native border after window creation
+			// native window not yet created --> add listener to run after window creation
 			AtomicReference<HierarchyListener> l = new AtomicReference<>();
 			l.set( e -> {
 				if( e.getID() == HierarchyEvent.HIERARCHY_CHANGED &&
 					(e.getChangeFlags() & HierarchyEvent.DISPLAYABILITY_CHANGED) != 0 )
 				{
-					setupRoundedBorderImpl( popupWindow, borderCornerRadius, borderWidth, borderColor );
+					runnable.run();
 					popupWindow.removeHierarchyListener( l.get() );
 				}
 			} );
@@ -420,7 +440,7 @@ public class FlatPopupFactory
 			int cornerPreference = (borderCornerRadius <= 4)
 				? FlatNativeWindowsLibrary.DWMWCP_ROUNDSMALL  // 4px
 				: FlatNativeWindowsLibrary.DWMWCP_ROUND;      // 8px
-			FlatNativeWindowsLibrary.setWindowCornerPreference( hwnd, cornerPreference );
+			FlatNativeWindowsLibrary.dwmSetWindowCornerPreference( hwnd, cornerPreference );
 
 			// set border color
 			FlatNativeWindowsLibrary.dwmSetWindowAttributeCOLORREF( hwnd, FlatNativeWindowsLibrary.DWMWA_BORDER_COLOR, borderColor );
@@ -441,7 +461,7 @@ public class FlatPopupFactory
 			return;
 
 		// reset corner preference
-		FlatNativeWindowsLibrary.setWindowCornerPreference( hwnd, FlatNativeWindowsLibrary.DWMWCP_DONOTROUND );
+		FlatNativeWindowsLibrary.dwmSetWindowCornerPreference( hwnd, FlatNativeWindowsLibrary.DWMWCP_DONOTROUND );
 	}
 
 	private static int getBorderCornerRadius( Component owner, Component contents ) {
@@ -612,6 +632,16 @@ public class FlatPopupFactory
 				// (e.g. macOS and Linux) when using dark theme
 				oldPopupWindowBackground = popupWindow.getBackground();
 				popupWindow.setBackground( contents.getBackground() );
+
+				// macOS may animate appearing of new windows, which makes the popup
+				// look "wobbly" because it is shown slightly smaller and blurred for a moment.
+				// The popup window is disposed in hideImpl(), so this occurs on each show.
+				if( SystemInfo.isMacOS && FlatNativeMacLibrary.isLoaded() ) {
+					Window window = popupWindow;
+					runWhenNativeWindowCreated( window, () -> {
+						FlatNativeMacLibrary.disableWindowAnimation( window );
+					} );
+				}
 			}
 		}
 
@@ -729,7 +759,7 @@ public class FlatPopupFactory
 				// (see class PopupFactory.HeavyWeightPopup).
 				// This may result in flicker when e.g. showing a popup in a light theme,
 				// then switching to a dark theme and again showing a popup,
-				// because the underling NSWindow still has a light background,
+				// because the underlying NSWindow still has a light background,
 				// which may be shown shortly before the actual dark popup content is shown.
 				// To fix this, dispose the popup window, which disposes the NSWindow.
 				// The AWT popup window stays in the popup cache, but when reusing it later,

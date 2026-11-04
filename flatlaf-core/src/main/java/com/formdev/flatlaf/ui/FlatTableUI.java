@@ -36,6 +36,7 @@ import java.awt.event.FocusListener;
 import java.awt.geom.Rectangle2D;
 import java.beans.PropertyChangeListener;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.Icon;
@@ -448,86 +449,10 @@ public class FlatTableUI
 	public void paint( Graphics g, JComponent c ) {
 		FlatTableHeaderUI.fixDraggedAndResizingColumns( table.getTableHeader() );
 
-		boolean horizontalLines = table.getShowHorizontalLines();
-		boolean verticalLines = table.getShowVerticalLines();
-		if( horizontalLines || verticalLines ) {
-			// fix grid painting issues in BasicTableUI
-			//   - do not paint last vertical grid line if line is on right edge of scroll pane
-			//   - fix unstable grid line thickness when scaled at 125%, 150%, 175%, 225%, ...
-			//     which paints either 1px or 2px lines depending on location
-			//   - on Java 9+, fix wrong grid line thickness in dragged column
-
-			boolean hideLastVerticalLine = hideLastVerticalLine();
-			int tableWidth = table.getWidth();
-			JTableHeader header = table.getTableHeader();
-			boolean isDragging = (header != null && header.getDraggedColumn() != null);
-
-			double systemScaleFactor = UIScale.getSystemScaleFactor( (Graphics2D) g );
-			double lineThickness = (1. / systemScaleFactor) * (int) systemScaleFactor;
-			double lineOffset = (1. - lineThickness) + 0.05; // adding 0.05 to fix line location in some cases
-
-			// Java 8 uses drawLine() to paint grid lines
-			// Java 9+ uses fillRect() to paint grid lines (except for dragged column)
-			g = new Graphics2DProxy( (Graphics2D) g ) {
-				@Override
-				public void drawLine( int x1, int y1, int x2, int y2 ) {
-					// do not paint last vertical line
-					if( hideLastVerticalLine && verticalLines &&
-						x1 == x2 && y1 == 0 && x1 == tableWidth - 1 &&
-						wasInvokedFromPaintGrid() )
-					  return;
-
-					// on Java 9+, fix wrong grid line thickness in dragged column
-					if( isDragging &&
-						SystemInfo.isJava_9_orLater &&
-						((horizontalLines && y1 == y2) || (verticalLines && x1 == x2)) &&
-						wasInvokedFromMethod( "paintDraggedArea" ) )
-					{
-						if( y1 == y2 ) {
-							// horizontal grid line
-							super.fill( new Rectangle2D.Double( x1, y1, x2 - x1 + 1, lineThickness ) );
-						} else if( x1 == x2 ) {
-							// vertical grid line
-							super.fill( new Rectangle2D.Double( x1, y1, lineThickness, y2 - y1 + 1 ) );
-						}
-						return;
-					}
-
-					super.drawLine( x1, y1, x2, y2 );
-				}
-
-				@Override
-				public void fillRect( int x, int y, int width, int height ) {
-					// do not paint last vertical line
-					if( hideLastVerticalLine && verticalLines &&
-						width == 1 && y == 0 && x == tableWidth - 1 &&
-						wasInvokedFromPaintGrid() )
-					  return;
-
-					// reduce line thickness to avoid unstable painted line thickness
-					if( lineThickness != 1 ) {
-						if( horizontalLines && height == 1 && wasInvokedFromPaintGrid() ) {
-							super.fill( new Rectangle2D.Double( x, y + lineOffset, width, lineThickness ) );
-							return;
-						}
-						if( verticalLines && width == 1 && y == 0 && wasInvokedFromPaintGrid() ) {
-							super.fill( new Rectangle2D.Double( x + lineOffset, y, lineThickness, height ) );
-							return;
-						}
-					}
-
-					super.fillRect( x, y, width, height );
-				}
-
-				private boolean wasInvokedFromPaintGrid() {
-					return wasInvokedFromMethod( "paintGrid" );
-				}
-
-				private boolean wasInvokedFromMethod( String methodName ) {
-					return StackUtils.wasInvokedFrom( BasicTableUI.class.getName(), methodName, 8 );
-				}
-			};
-		}
+		// fix grid painting issues
+		if( table.getShowHorizontalLines() || table.getShowVerticalLines() ||
+			!table.getIntercellSpacing().equals( new Dimension() ) )
+		  g = new FixGridPaintingGraphics( g );
 
 		// rounded selection or selection insets
 		if( (selectionArc > 0 || (selectionInsets != null && !FlatUIUtils.isInsetsEmpty( selectionInsets ))) && !isFileList( table ) )
@@ -646,8 +571,8 @@ public class FlatTableUI
 			}
 		}
 
-		FlatUIUtils.paintSelection( (Graphics2D) g, x, y, width, height,
-			UIScale.scale( insets ), arcTopLeft, arcTopRight, arcBottomLeft, arcBottomRight, 0 );
+		paintSelectionImpl( (Graphics2D) g, x, y, width, height,
+			UIScale.scale( insets ), arcTopLeft, arcTopRight, arcBottomLeft, arcBottomRight );
 	}
 
 	/**
@@ -712,8 +637,34 @@ public class FlatTableUI
 				arcBottomLeft = arcBottomRight = 0;
 		}
 
-		FlatUIUtils.paintSelection( (Graphics2D) g, x, y, width, height,
-			UIScale.scale( insets ), arcTopLeft, arcTopRight, arcBottomLeft, arcBottomRight, 0 );
+		paintSelectionImpl( (Graphics2D) g, x, y, width, height,
+			UIScale.scale( insets ), arcTopLeft, arcTopRight, arcBottomLeft, arcBottomRight );
+	}
+
+	private void paintSelectionImpl( Graphics2D g, int x, int y, int width, int height, Insets insets,
+		float arcTopLeft, float arcTopRight, float arcBottomLeft, float arcBottomRight )
+	{
+		AtomicInteger flags = new AtomicInteger();
+		Runnable painter = () -> {
+			FlatUIUtils.paintSelection( g, x, y, width, height,
+				UIScale.scale( insets ), arcTopLeft, arcTopRight, arcBottomLeft, arcBottomRight, flags.get() );
+		};
+
+		if( g instanceof RoundedSelectionGraphics &&
+			((RoundedSelectionGraphics)g).isg != null &&
+			(arcTopLeft > 0 || arcTopRight > 0 || arcBottomLeft > 0 || arcBottomRight > 0) )
+		{
+			if( ((RoundedSelectionGraphics)g).isg.fillEx( x, y, width, height, (extraWidth, extraHeight) -> {
+					if( extraWidth > 0 )
+						flags.set( flags.get() | FlatUIUtils.FLAG_EXTRA_HPIXEL );
+					if( extraHeight > 0 )
+						flags.set( flags.get() | FlatUIUtils.FLAG_EXTRA_VPIXEL );
+					painter.run();
+				} ) )
+			  return;
+		}
+
+		painter.run();
 	}
 
 	/**
@@ -800,6 +751,288 @@ public class FlatTableUI
 		return Boolean.TRUE.equals( table.getClientProperty( "Table.isFileList" ) );
 	}
 
+	/**
+	 * A CellRendererPane may contain multiple components, if multiple renderers
+	 * are used. Inactive renderer components have size {@code 0x0}.
+	 */
+	private Component findActiveRendererComponent() {
+		int count = rendererPane.getComponentCount();
+		for( int i = 0; i < count; i++ ) {
+			Component c = rendererPane.getComponent( i );
+			if( c.getWidth() > 0 && c.getHeight() > 0 )
+				return c;
+		}
+		return null;
+	}
+
+	//---- class FixGridPaintingGraphics --------------------------------------
+
+	/**
+	 * fix grid line painting issues in BasicTableUI
+	 *   - do not paint last vertical grid line if line is on right edge of scroll pane
+	 *   - fix unstable grid line thickness when scaled at 125%, 150%, 175%, 225%, ...
+	 *     which paints either 1px or 2px lines depending on location
+	 *   - on Java 9+, fix wrong grid line thickness in dragged column
+	 *
+	 * Java 8 uses drawLine() to paint grid lines
+	 * Java 9+ uses fillRect() to paint grid lines (except for dragged column)
+	 */
+	private class FixGridPaintingGraphics
+		extends Graphics2DProxy
+	{
+		private final boolean horizontalLines;
+		private final boolean verticalLines;
+		private final boolean fixCellWidth;
+		private final boolean fixCellHeight;
+
+		private final boolean hideLastVerticalLine;
+		private final int tableWidth;
+		private final boolean isDragging;
+
+		private final double systemScaleFactor;
+		private final double lineThickness;
+		private final double lineOffset;
+
+		FixGridPaintingGraphics( Graphics delegate ) {
+			super( (Graphics2D) delegate );
+
+			horizontalLines = table.getShowHorizontalLines();
+			verticalLines = table.getShowVerticalLines();
+
+			hideLastVerticalLine = hideLastVerticalLine();
+			tableWidth = table.getWidth();
+			JTableHeader header = table.getTableHeader();
+			isDragging = (header != null && header.getDraggedColumn() != null);
+
+			systemScaleFactor = UIScale.getSystemScaleFactor( (Graphics2D) delegate );
+			lineThickness = (1. / systemScaleFactor) * (int) systemScaleFactor;
+			lineOffset = (1. - lineThickness) + 0.05; // adding 0.05 to fix line location in some cases
+
+			if( systemScaleFactor != (int) systemScaleFactor ) {
+				Dimension intercellSpacing = table.getIntercellSpacing();
+				fixCellWidth = (intercellSpacing.width > 0);
+				fixCellHeight = (intercellSpacing.height > 0);
+			} else
+				fixCellWidth = fixCellHeight = false;
+		}
+
+		@Override
+		public Graphics create() {
+			return fixCellWidth || fixCellHeight
+				? new FixIntercellSpacingGraphics( this, super.create() )
+				: super.create();
+		}
+
+		@Override
+		public Graphics create( int x, int y, int width, int height ) {
+			return fixCellWidth || fixCellHeight
+				? new FixIntercellSpacingGraphics( this, super.create( x, y, width, height ) )
+				: super.create( x, y, width, height );
+		}
+
+		@Override
+		public void drawLine( int x1, int y1, int x2, int y2 ) {
+			// do not paint last vertical line
+			if( hideLastVerticalLine && verticalLines &&
+				x1 == x2 && y1 == 0 && x1 == tableWidth - 1 &&
+				wasInvokedFromPaintGrid() )
+			  return;
+
+			// on Java 9+, fix wrong grid line thickness in dragged column
+			if( isDragging &&
+				SystemInfo.isJava_9_orLater &&
+				((horizontalLines && y1 == y2) || (verticalLines && x1 == x2)) &&
+				wasInvokedFromMethod( "paintDraggedArea" ) )
+			{
+				if( y1 == y2 ) {
+					// horizontal grid line
+					super.fill( new Rectangle2D.Double( x1, y1, x2 - x1 + 1, lineThickness ) );
+				} else if( x1 == x2 ) {
+					// vertical grid line
+					super.fill( new Rectangle2D.Double( x1, y1, lineThickness, y2 - y1 + 1 ) );
+				}
+				return;
+			}
+
+			super.drawLine( x1, y1, x2, y2 );
+		}
+
+		@Override
+		public void fillRect( int x, int y, int width, int height ) {
+			// do not paint last vertical line
+			if( hideLastVerticalLine && verticalLines &&
+				width == 1 && y == 0 && x == tableWidth - 1 &&
+				wasInvokedFromPaintGrid() )
+			  return;
+
+			// reduce line thickness to avoid unstable painted line thickness
+			if( lineThickness != 1 ) {
+				if( horizontalLines && height == 1 && wasInvokedFromPaintGrid() ) {
+					super.fill( new Rectangle2D.Double( x, y + lineOffset, width, lineThickness ) );
+					return;
+				}
+				if( verticalLines && width == 1 && y == 0 && wasInvokedFromPaintGrid() ) {
+					super.fill( new Rectangle2D.Double( x + lineOffset, y, lineThickness, height ) );
+					return;
+				}
+			}
+
+			super.fillRect( x, y, width, height );
+		}
+
+		private boolean wasInvokedFromPaintGrid() {
+			return wasInvokedFromMethod( "paintGrid" );
+		}
+
+		private boolean wasInvokedFromMethod( String methodName ) {
+			return StackUtils.wasInvokedFrom( BasicTableUI.class.getName(), methodName, 8 );
+		}
+	}
+
+	//---- class FixIntercellSpacingGraphics ----------------------------------
+
+	/**
+	 * When table uses intercell spacing (and grid lines) at 125%, 150%, 175%, 225%, etc,
+	 * then a 1px intercell gap is scaled to either 1 or 2 device pixels (depends on x/y).
+	 * This results in unstable intercell space on multi-selection or if cell fills background.
+	 * <p>
+	 * To get stable intercell spacing, where all rows and columns have exact same space
+	 * between them, this graphics context increases width and/or height of some
+	 * fill rectangle operations by 1-device-px.
+	 */
+	private class FixIntercellSpacingGraphics
+		extends Graphics2DProxy
+	{
+		private final FixGridPaintingGraphics gg;
+		private final boolean fixCellWidth;
+		private final boolean fixCellHeight;
+		private final double systemScaleFactor;
+
+		private boolean inPainting;
+
+		FixIntercellSpacingGraphics( FixGridPaintingGraphics gg, Graphics delegate ) {
+			super( (Graphics2D) delegate );
+			this.gg = gg;
+
+			fixCellWidth = gg.fixCellWidth;
+			fixCellHeight = gg.fixCellHeight;
+			systemScaleFactor = gg.systemScaleFactor;
+		}
+
+		@Override
+		public Graphics create() {
+			return new FixIntercellSpacingGraphics( gg, super.create() );
+		}
+
+		@Override
+		public Graphics create( int x, int y, int width, int height ) {
+			return new FixIntercellSpacingGraphics( gg, super.create( x, y, width, height ) );
+		}
+
+		@Override
+		public void fillRect( int x, int y, int width, int height ) {
+			FixIntercellSpacingPainter painter = (extraWidth, extraHeight) -> {
+				super.fill( new Rectangle2D.Double( x, y, width + extraWidth, height + extraHeight ) );
+			};
+			if( fillEx( x, y, width, height, painter ) )
+				return;
+
+			super.fillRect( x, y, width, height );
+		}
+
+		@Override
+		public void fill( Shape shape ) {
+			if( shape instanceof Rectangle2D ) {
+				// get rectangle bounds
+				Rectangle2D r = (Rectangle2D) shape;
+				double x = r.getX();
+				double y = r.getY();
+				double width = r.getWidth();
+				double height = r.getHeight();
+
+				// handle only rectangles that have integer coordinates
+				if( x == (int) x && y == (int) y && width == (int) width && height == (int) height ) {
+					FixIntercellSpacingPainter painter = (extraWidth, extraHeight) -> {
+						super.fill( new Rectangle2D.Double( x, y, width + extraWidth, height + extraHeight ) );
+					};
+					if( fillEx( (int) x, (int) y, (int) width, (int) height, painter ) )
+						return;
+				}
+			}
+
+			super.fill( shape );
+		}
+
+		boolean fillEx( int x, int y, int width, int height, FixIntercellSpacingPainter painter ) {
+			if( inPainting )
+				return false;
+
+			// find renderer component
+			Component rendererComponent = findActiveRendererComponent();
+			if( rendererComponent == null )
+				return false;
+
+			// check whether shape bounds "touch" right or bottom renderer edge
+			int x2 = x + width;
+			int y2 = y + height;
+			int rendererWidth = rendererComponent.getWidth();
+			int rendererHeight = rendererComponent.getHeight();
+			if( x2 != rendererWidth && y2 != rendererHeight )
+				return false;
+
+			// compute right/bottom 1px gap size (intercell space) in device pixels
+			Rectangle gap = HiDPIUtils.scaleTo1x( getTransform(), rendererWidth, rendererHeight, 1, 1 );
+			if( gap.width <= (int) systemScaleFactor && gap.height <= (int) systemScaleFactor )
+				return false;
+
+			// get current clipping shape
+			Shape oldClip = getClip();
+			if( !(oldClip instanceof Rectangle2D) )
+				return false;
+
+			// compute extra width/height
+			Rectangle2D r = (Rectangle2D) oldClip;
+			double oneDevicePixelSize = 1. - ((1. / systemScaleFactor) * (int) systemScaleFactor);
+			double extraWidth = (fixCellWidth && gap.width > (int) systemScaleFactor && width > 1 &&
+				Math.round( r.getMaxX() ) == x + width) ? oneDevicePixelSize : 0;
+			double extraHeight = (fixCellHeight && gap.height > (int) systemScaleFactor && height > 1 &&
+				Math.round( r.getMaxY() ) == y + height) ? oneDevicePixelSize : 0;
+			if( extraWidth <= 0 && extraHeight <= 0 )
+				return false;
+
+			// increase size of clip rectangle
+			// (rounding of x/y is necessary because in some cases
+			//  they have strange non-zero values
+			//  e.g. x=1.7763568394002505E-15,y=5.684341886080802E-14
+			//  and increasing width/height by e.g. 0.2 at 125%
+			//  results in not painted top/left 1px line)
+			Rectangle2D newClip = new Rectangle2D.Double(
+				round3( r.getX() ), round3( r.getY() ),
+				round3( r.getWidth() ) + extraWidth, round3( r.getHeight() ) + extraHeight );
+			setClip( newClip );
+
+			inPainting = true;
+			painter.paint( extraWidth, extraHeight );
+			inPainting = false;
+
+			setClip( oldClip );
+			return true;
+		}
+
+		/**
+		 * Round double to 3 decimal places.
+		 */
+		private double round3( double value ) {
+			return Math.round( value * 1000. ) / 1000.;
+		}
+	}
+
+	//---- interface FixIntercellSpacingPainter -------------------------------
+
+	private interface FixIntercellSpacingPainter {
+		void paint( double extraWidth, double extraHeight );
+	}
+
 	//---- class RoundedSelectionGraphics -------------------------------------
 
 	/**
@@ -816,6 +1049,7 @@ public class FlatTableUI
 		extends Graphics2DProxy
 	{
 		private final Color alternateRowColor;
+		private final FixIntercellSpacingGraphics isg;
 
 		// used to avoid endless loop in case that paintCellSelection() invokes
 		// g.fillRect() with full bounds (selectionInsets is 0,0,0,0)
@@ -824,6 +1058,7 @@ public class FlatTableUI
 		RoundedSelectionGraphics( Graphics delegate, Color alternateRowColor ) {
 			super( (Graphics2D) delegate );
 			this.alternateRowColor = alternateRowColor;
+			isg = (delegate instanceof FixIntercellSpacingGraphics) ? (FixIntercellSpacingGraphics) delegate : null;
 		}
 
 		@Override
@@ -889,20 +1124,6 @@ public class FlatTableUI
 				}
 			}
 			return false;
-		}
-
-		/**
-		 * A CellRendererPane may contain multiple components, if multiple renderers
-		 * are used. Inactive renderer components have size {@code 0x0}.
-		 */
-		private Component findActiveRendererComponent() {
-			int count = rendererPane.getComponentCount();
-			for( int i = 0; i < count; i++ ) {
-				Component c = rendererPane.getComponent( i );
-				if( c.getWidth() > 0 && c.getHeight() > 0 )
-					return c;
-			}
-			return null;
 		}
 	}
 

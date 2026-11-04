@@ -820,11 +820,13 @@ Slider.onlyLeftMouseButtonDrag
 Slider.pressedThumbColor
 Slider.pressedTrackColor
 Slider.shadow
+Slider.thumbArc
 Slider.thumbBorderColor
 Slider.thumbBorderWidth
 Slider.thumbColor
 Slider.thumbSize
 Slider.tickColor
+Slider.trackArc
 Slider.trackColor
 Slider.trackValueColor
 Slider.trackWidth
@@ -869,6 +871,7 @@ SplitPaneDivider.gripDotSize
 SplitPaneDivider.gripGap
 SplitPaneDivider.hoverColor
 SplitPaneDivider.oneTouchArrowColor
+SplitPaneDivider.oneTouchButtonsPlacement
 SplitPaneDivider.oneTouchHoverArrowColor
 SplitPaneDivider.oneTouchPressedArrowColor
 SplitPaneDivider.pressedColor
