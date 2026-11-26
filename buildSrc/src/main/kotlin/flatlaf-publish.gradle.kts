@@ -15,7 +15,11 @@
  */
 
 
-open class NativeArtifact( val fileName: String, val classifier: String, val extension: String ) {}
+/**
+ * @param source file name (String, relative to project directory) or any other
+ *               notation supported by MavenPublication.artifact() (e.g. a task provider)
+ */
+open class NativeArtifact( val source: Any, val classifier: String, val extension: String ) {}
 
 open class PublishExtension {
 	var artifactId: String? = null
@@ -80,7 +84,8 @@ publishing {
 
 			afterEvaluate {
 				extension.nativeArtifacts?.forEach {
-					artifact( file( it.fileName ) ) {
+					val source = it.source
+					artifact( if( source is String ) file( source ) else source ) {
 						classifier = it.classifier
 						extension = it.extension
 					}
@@ -104,14 +109,17 @@ signing {
 
 // disable signing of snapshots
 tasks.withType<Sign>().configureEach {
-	onlyIf { rootProject.hasProperty( "release" ) }
+	val release = rootProject.hasProperty( "release" ) // necessary for configuration cache
+	onlyIf { release }
 }
 
 tasks {
 	// check whether parallel build is enabled
 	withType<AbstractPublishToMaven>().configureEach {
+		// covers '--parallel', '-Dorg.gradle.parallel=true' and 'org.gradle.parallel=true' in gradle.properties
+		val parallel = gradle.startParameter.isParallelProjectExecutionEnabled // necessary for configuration cache
 		doFirst {
-			if( System.getProperty( "org.gradle.parallel" ) == "true" )
+			if( parallel )
 				throw RuntimeException( "Publishing does not work correctly with enabled parallel build. Disable parallel build with VM option '-Dorg.gradle.parallel=false'." )
 		}
 	}

@@ -22,16 +22,12 @@ plugins {
 	`flatlaf-module-info`
 	`flatlaf-java9`
 	`flatlaf-publish`
+	`flatlaf-sigtest`
 }
-
-val sigtest = configurations.create( "sigtest" )
 
 dependencies {
 	testImplementation( libs.junit )
 	testRuntimeOnly( libs.junit.launcher )
-
-	// https://github.com/eclipse-ee4j/jakartaee-tck-tools/tree/master/tools/sigtest
-	sigtest( libs.sigtest )
 }
 
 java {
@@ -63,27 +59,14 @@ tasks {
 
 	register<Zip>( "jarNoNatives" ) {
 		group = "build"
-		dependsOn( "jar" )
 
 		archiveBaseName = "flatlaf"
 		archiveClassifier = "no-natives"
 		archiveExtension = "jar"
 		destinationDirectory = layout.buildDirectory.dir( "libs" )
 
-		from( zipTree( jar.get().archiveFile.get().asFile ) )
+		from( zipTree( jar.flatMap { it.archiveFile } ) )
 		exclude( "com/formdev/flatlaf/natives/**" )
-	}
-
-	withType<AbstractPublishToMaven>().configureEach {
-		dependsOn( "jarNoNatives" )
-	}
-
-	withType<Sign>().configureEach {
-		dependsOn( "jarNoNatives" )
-	}
-
-	check {
-		dependsOn( "sigtestCheck" )
 	}
 
 	test {
@@ -93,68 +76,14 @@ tasks {
 		if( java.toolchain.languageVersion.get().asInt() >= 9 )
 			jvmArgs( listOf( "--add-opens", "java.desktop/javax.swing.plaf.basic=ALL-UNNAMED" ) )
 	}
+}
 
-	register( "sigtestGenerate" ) {
-		group = "verification"
-		dependsOn( "jar" )
-
-		// necessary for configuration cache
-		val classpath = sigtest.asPath
-		val signatureFile = "${project.name}-sigtest.txt"
-		val jarPath = jar.get().outputs.files.asPath
-		val version = version
-
-		doLast {
-			ant.withGroovyBuilder {
-				"taskdef"(
-					"name" to "sigtest",
-					"classname" to "org.netbeans.apitest.Sigtest",
-					"classpath" to classpath )
-
-				"sigtest"(
-					"action" to "generate",
-					"fileName" to signatureFile,
-					"classpath" to jarPath,
-					"packages" to "com.formdev.flatlaf,com.formdev.flatlaf.themes,com.formdev.flatlaf.util",
-					"version" to version,
-					"release" to "1.8", // Java version
-					"failonerror" to "true" )
-
-				"fixcrlf"(
-					"file" to signatureFile,
-					"eol" to "lf" )
-			}
-		}
-	}
-
-	register( "sigtestCheck" ) {
-		group = "verification"
-		dependsOn( "jar" )
-
-		// necessary for configuration cache
-		val classpath = sigtest.asPath
-		val signatureFile = "${project.name}-sigtest.txt"
-		val jarPath = jar.get().outputs.files.asPath
-		val version = version
-
-		doLast {
-			ant.withGroovyBuilder {
-				"taskdef"(
-					"name" to "sigtest",
-					"classname" to "org.netbeans.apitest.Sigtest",
-					"classpath" to classpath )
-
-				"sigtest"(
-					"action" to "check",
-					"fileName" to signatureFile,
-					"classpath" to jarPath,
-					"packages" to "com.formdev.flatlaf,com.formdev.flatlaf.util",
-					"version" to version,
-					"release" to "1.8", // Java version
-					"failonerror" to "true" )
-			}
-		}
-	}
+flatlafSigtest {
+	packages = listOf(
+		"com.formdev.flatlaf",
+		"com.formdev.flatlaf.themes",
+		"com.formdev.flatlaf.util"
+	)
 }
 
 flatlafPublish {
@@ -164,7 +93,7 @@ flatlafPublish {
 
 	val natives = "src/main/resources/com/formdev/flatlaf/natives"
 	nativeArtifacts = listOf(
-		NativeArtifact( tasks.getByName( "jarNoNatives" ).outputs.files.asPath, "no-natives", "jar" ),
+		NativeArtifact( tasks.named( "jarNoNatives" ), "no-natives", "jar" ),
 
 		NativeArtifact( "${natives}/flatlaf-windows-x86.dll",       "windows-x86",    "dll" ),
 		NativeArtifact( "${natives}/flatlaf-windows-x86_64.dll",    "windows-x86_64", "dll" ),

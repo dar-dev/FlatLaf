@@ -41,10 +41,10 @@ extra["toolchainJavaVersion"] = toolchainJavaVersion
 // log version, Gradle and Java versions
 println()
 println( "-------------------------------------------------------------------------------" )
-println( "FlatLaf Version: ${version}" )
-println( "Gradle ${gradle.gradleVersion} at ${gradle.gradleHomeDir}" )
-println( "Java ${System.getProperty( "java.version" )}" )
-println( "Java toolchain ${toolchainJavaVersion}" )
+println( "FlatLaf  ${version}" )
+println( "Gradle   %-10s at %s".format( gradle.gradleVersion, gradle.gradleHomeDir ) )
+println( "in Java  %-10s at %s".format( System.getProperty( "java.version" ), System.getProperty( "java.home" ) ) )
+println( "Java toolchain  ${toolchainJavaVersion}" )
 println()
 
 
@@ -65,7 +65,7 @@ allprojects {
 			sourceCompatibility = "1.8"
 			targetCompatibility = "1.8"
 
-			options.encoding = "ISO-8859-1"
+			options.encoding = "UTF-8"
 			options.isDeprecation = false
 		}
 
@@ -91,6 +91,9 @@ allprojects {
 			options {
 				this as StandardJavadocDocletOptions
 
+				encoding = "UTF-8"
+				docEncoding = "UTF-8"
+				charSet = "UTF-8"
 				title = "${project.name} $version"
 				header = title
 				isUse = true
@@ -124,9 +127,7 @@ allprojects {
 
 	tasks.register( "errorprone" ) {
 		group = "verification"
-		tasks.withType<JavaCompile>().forEach {
-			dependsOn( it )
-		}
+		dependsOn( tasks.withType<JavaCompile>() )
 	}
 
 	val useErrorProne = gradle.startParameter.taskNames.contains( "errorprone" )

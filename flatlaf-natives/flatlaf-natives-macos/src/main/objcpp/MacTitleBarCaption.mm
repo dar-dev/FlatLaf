@@ -15,6 +15,7 @@
  */
 
 #import <Cocoa/Cocoa.h>
+#import <objc/message.h>
 #import <jni.h>
 #import "JNIUtils.h"
 #import "JNFRunLoop.h"
@@ -57,6 +58,32 @@ static bool ensureMethodIDs( JNIEnv* env ) {
 	jclass cls = findClass( env, "com/formdev/flatlaf/ui/FlatNativeMacLibrary$FullWindowContentTitleBarCaptionCallback", false );
 	_isTitleBarCaptionAtMethodID = getMethodID( env, cls, "isTitleBarCaptionAt", "(II)Z", false );
 	return _isTitleBarCaptionAtMethodID != NULL;
+}
+
+// Deletes the global reference to the Java callback (if any).
+// Invoked when WindowData is deallocated (when the NSWindow is deallocated)
+// without removeFullWindowContentTitleBarCaption() being invoked before.
+void deleteTitleBarCaptionCallback( WindowData* windowData ) {
+	jobject callback = windowData.titleBarCaptionCallback;
+	if( callback == NULL || _jvm == NULL )
+		return;
+
+	windowData.titleBarCaptionCallback = NULL;
+
+	// the current thread is usually the AppKit main thread, which is attached to the JVM
+	JNIEnv* env;
+	switch( _jvm->GetEnv( (void**) &env, JNI_VERSION_1_6 ) ) {
+		case JNI_OK:
+			env->DeleteGlobalRef( callback );
+			break;
+
+		case JNI_EDETACHED:
+			if( _jvm->AttachCurrentThread( (void**) &env, NULL ) == JNI_OK ) {
+				env->DeleteGlobalRef( callback );
+				_jvm->DetachCurrentThread();
+			}
+			break;
+	}
 }
 
 // Asks the registered Java callback whether the event location is over a
@@ -200,15 +227,40 @@ static bool isCaptionEvent( NSWindow* nsWindow, NSEvent* event ) {
 		if( _windowDragged || event.clickCount != 2 )
 			return;
 
-		// run the user's "double click on title bar" preference
+		// run the user's "double-click a window's title bar" preference
+
+		// let AppKit handle the double-click the same way as for native title bars;
+		// this supports all actions (Fill, Zoom, Minimize, Do Nothing),
+		// the default action (depends on macOS version) and legacy preferences
+		// (uses private method -[NSTitledFrame _handlePossibleDoubleClickForEvent:])
 		NSWindow* w = self.window;
-		NSString* action = [[NSUserDefaults standardUserDefaults]
-			stringForKey:@"AppleActionOnDoubleClick"];
-		if( action == nil ||
-			[action caseInsensitiveCompare:@"Maximize"] == NSOrderedSame ||
-			[action caseInsensitiveCompare:@"Fill"] == NSOrderedSame )
+		NSView* themeFrame = w.contentView.superview;
+		SEL handleDoubleClickSel = NSSelectorFromString( @"_handlePossibleDoubleClickForEvent:" );
+		if( [themeFrame respondsToSelector:handleDoubleClickSel] ) {
+			((BOOL (*)( id, SEL, NSEvent* )) objc_msgSend)( themeFrame, handleDoubleClickSel, event );
+			return;
+		}
+
+		// fallback if private method is not available
+		NSUserDefaults* defaults = [NSUserDefaults standardUserDefaults];
+		NSString* action = [defaults stringForKey:@"AppleActionOnDoubleClick"];
+		if( action == nil ) {
+			// legacy preference (older macOS versions)
+			if( [defaults boolForKey:@"AppleMiniaturizeOnDoubleClick"] )
+				[w miniaturize:nil];
+			else
+				[w zoom:nil];
+		} else if( [action caseInsensitiveCompare:@"Maximize"] == NSOrderedSame )
 			[w zoom:nil];
-		else if( [action caseInsensitiveCompare:@"Minimize"] == NSOrderedSame )
+		else if( [action caseInsensitiveCompare:@"Fill"] == NSOrderedSame ) {
+			// "Fill" (macOS 15+) fills the screen using window tiling
+			// (private method; same as menu item "Window > Fill")
+			SEL zoomFillSel = NSSelectorFromString( @"_zoomFill:" );
+			if( [w respondsToSelector:zoomFillSel] )
+				((void (*)( id, SEL, id )) objc_msgSend)( w, zoomFillSel, nil );
+			else
+				[w zoom:nil];
+		} else if( [action caseInsensitiveCompare:@"Minimize"] == NSOrderedSame )
 			[w miniaturize:nil];
 	}
 
@@ -313,16 +365,25 @@ JNIEXPORT jboolean JNICALL Java_com_formdev_flatlaf_ui_FlatNativeMacLibrary_setu
 
 	WindowData* windowData = getWindowData( nsWindow, true );
 
-	env->DeleteGlobalRef( windowData.titleBarCaptionCallback );
-	windowData.titleBarCaptionCallback = env->NewGlobalRef( callback );
+	jobject newCallback = env->NewGlobalRef( callback );
+	jobject oldCallback = NULL;
+	jobject* pOldCallback = &oldCallback;
 
 	[FlatJNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
 		JNI_COCOA_TRY()
+
+		// swap callback on main thread, where isCaptionEvent() uses it,
+		// so that the old callback is no longer in use when deleting it below
+		*pOldCallback = windowData.titleBarCaptionCallback;
+		windowData.titleBarCaptionCallback = newCallback;
 
 		attachTitleBarDragViewIfNeeded( nsWindow, windowData );
 
 		JNI_COCOA_CATCH()
 	}];
+
+	if( oldCallback != NULL )
+		env->DeleteGlobalRef( oldCallback );
 
 	return TRUE;
 
@@ -344,21 +405,31 @@ JNIEXPORT jboolean JNICALL Java_com_formdev_flatlaf_ui_FlatNativeMacLibrary_remo
 	if( windowData == NULL )
 		return FALSE;
 
-	env->DeleteGlobalRef( windowData.titleBarCaptionCallback );
-	windowData.titleBarCaptionCallback = NULL;
-
-	if( windowData.titleBarDragView == nil )
-		return FALSE;
+	jobject oldCallback = NULL;
+	jobject* pOldCallback = &oldCallback;
+	bool removed = false;
+	bool* pRemoved = &removed;
 
 	[FlatJNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
 		JNI_COCOA_TRY()
 
-		detachTitleBarDragView( windowData );
+		// clear callback on main thread, where isCaptionEvent() uses it,
+		// so that the old callback is no longer in use when deleting it below
+		*pOldCallback = windowData.titleBarCaptionCallback;
+		windowData.titleBarCaptionCallback = NULL;
+
+		if( windowData.titleBarDragView != nil ) {
+			detachTitleBarDragView( windowData );
+			*pRemoved = true;
+		}
 
 		JNI_COCOA_CATCH()
 	}];
 
-	return TRUE;
+	if( oldCallback != NULL )
+		env->DeleteGlobalRef( oldCallback );
+
+	return removed;
 
 	JNI_COCOA_EXIT()
 	return FALSE;

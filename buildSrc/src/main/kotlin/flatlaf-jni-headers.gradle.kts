@@ -14,11 +14,28 @@
  * limitations under the License.
  */
 
-open class JniHeadersExtension {
+// Java version of JDK used to build natives
+val jniJavaVersion = 17
+
+plugins {
+	id( "jvm-toolchains" )
+}
+
+abstract class JniHeadersExtension {
 	var headers: List<String> = emptyList()
+
+	/**
+	 * Home directory of the JDK used to build natives
+	 * (provides jni.h, jni_md.h, jawt.h and libjawt.so).
+	 * Independent of the JDK that runs Gradle.
+	 */
+	abstract val javaHome: DirectoryProperty
 }
 
 val extension = project.extensions.create<JniHeadersExtension>( "flatlafJniHeaders" )
+extension.javaHome.convention( javaToolchains
+	.compilerFor { languageVersion = JavaLanguageVersion.of( jniJavaVersion ) }
+	.map { it.metadata.installationPath } )
 
 
 tasks {
@@ -29,8 +46,36 @@ tasks {
 		from( project( ":flatlaf-core" ).layout.buildDirectory.dir( "generated/jni-headers" ) )
 		into( "src/main/headers" )
 		include( extension.headers )
-		filter<org.apache.tools.ant.filters.FixCrLfFilter>(
-			"eol" to org.apache.tools.ant.filters.FixCrLfFilter.CrLf.newInstance( "lf" )
-		)
+		filter<LfFilterReader>()
+	}
+}
+
+
+/**
+ * Converts line endings to LF (by removing all CR characters).
+ */
+class LfFilterReader( reader: java.io.Reader ) : java.io.FilterReader( reader ) {
+	override fun read(): Int {
+		var c: Int
+		do {
+			c = super.read()
+		} while( c == '\r'.code )
+		return c
+	}
+
+	override fun read( cbuf: CharArray, off: Int, len: Int ): Int {
+		while( true ) {
+			val n = super.read( cbuf, off, len )
+			if( n <= 0 )
+				return n
+
+			var j = off
+			for( i in off until off + n ) {
+				if( cbuf[i] != '\r' )
+					cbuf[j++] = cbuf[i]
+			}
+			if( j > off )
+				return j - off
+		}
 	}
 }

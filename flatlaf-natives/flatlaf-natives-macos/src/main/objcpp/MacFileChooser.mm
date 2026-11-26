@@ -74,7 +74,9 @@ static const NSInteger EDIT_COMMAND_MENU_ITEM_TAG = 0x464c4146;
 @implementation FileChooserDelegate
 
 	- (id) init {
-		_selectedFormatIndex = -1;
+		self = [super init];
+		if( self != nil )
+			_selectedFormatIndex = -1;
 		return self;
 	}
 
@@ -136,6 +138,11 @@ static const NSInteger EDIT_COMMAND_MENU_ITEM_TAG = 0x464c4146;
 
 		[_dialog setAccessoryView:accessoryView];
 
+		// now owned by superviews/dialog
+		[label release];
+		[popupButton release];
+		[accessoryView release];
+
 		// initial filter
 		[self selectFormatAtIndex:filterIndex];
 	}
@@ -181,28 +188,40 @@ static const NSInteger EDIT_COMMAND_MENU_ITEM_TAG = 0x464c4146;
 		if( urls != NULL && urls.count > 1 ) {
 			if( _urlsSet == NULL ) {
 				// invoked for first selected file --> invoke callback
-				_urlsSet = [NSMutableSet setWithArray:urls];
+				// (retained because it is used across multiple validateURL invocations)
+				_urlsSet = [[NSMutableSet alloc] initWithArray:urls];
 				[_urlsSet removeObject:url];
 			} else {
 				// invoked for other selected files --> do not invoke callback
 				[_urlsSet removeObject:url];
 				if( _urlsSet.count == 0 )
-					_urlsSet = NULL;
+					[self clearURLsSet];
 				return true;
 			}
 		}
 
 		JNI_THREAD_ENTER( _jvm, true )
 
-		jobjectArray files = urlsToStringArray( env, urls );
-		jint selectedFormatIndex = ((FileChooserDelegate*)((NSSavePanel*)sender).delegate).selectedFormatIndex;
-		jlong window = (jlong) sender;
+		// The AppKit thread is permanently attached to the JVM (by AWT) and there is
+		// no Java-to-native call frame, so local references created here would never be freed.
+		// Use a local frame to free them when done.
+		bool approved = true;
+		if( env->PushLocalFrame( 16 ) == JNI_OK ) {
+			jobjectArray files = urlsToStringArray( env, urls );
+			jint selectedFormatIndex = ((FileChooserDelegate*)((NSSavePanel*)sender).delegate).selectedFormatIndex;
+			jlong window = (jlong) sender;
 
-		// invoke callback: boolean approve( String[] files, long hwnd );
-		jclass cls = env->GetObjectClass( _callback );
-		jmethodID approveID = env->GetMethodID( cls, "approve", "([Ljava/lang/String;IJ)Z" );
-		if( approveID != NULL && !env->CallBooleanMethod( _callback, approveID, files, selectedFormatIndex, window ) ) {
-			_urlsSet = NULL;
+			// invoke callback: boolean approve( String[] files, long hwnd );
+			jclass cls = env->GetObjectClass( _callback );
+			jmethodID approveID = env->GetMethodID( cls, "approve", "([Ljava/lang/String;IJ)Z" );
+			if( approveID != NULL && !env->CallBooleanMethod( _callback, approveID, files, selectedFormatIndex, window ) )
+				approved = false;
+
+			env->PopLocalFrame( NULL );
+		}
+
+		if( !approved ) {
+			[self clearURLsSet];
 			return false; // keep dialog open
 		}
 
@@ -210,6 +229,16 @@ static const NSInteger EDIT_COMMAND_MENU_ITEM_TAG = 0x464c4146;
 		JNI_COCOA_CATCH()
 
 		return true;
+	}
+
+	- (void) clearURLsSet {
+		[_urlsSet release];
+		_urlsSet = NULL;
+	}
+
+	- (void) dealloc {
+		[self clearURLsSet];
+		[super dealloc];
 	}
 
 	//---- NSWindowDelegate ----
@@ -254,8 +283,11 @@ static const NSInteger EDIT_COMMAND_MENU_ITEM_TAG = 0x464c4146;
 			item.keyEquivalentModifierMask = command.modifiers;
 			item.target = nil; // use responder chain
 			item.tag = EDIT_COMMAND_MENU_ITEM_TAG;
-			item.view = [[NSView alloc] initWithFrame:NSMakeRect( 0, 0, 1, 1 )];
+			NSView* view = [[NSView alloc] initWithFrame:NSMakeRect( 0, 0, 1, 1 )];
+			item.view = view;
+			[view release]; // now owned by menu item
 			[appMenu addItem:item];
+			[item release]; // now owned by menu
 		}
 
 		JNI_COCOA_CATCH()
@@ -305,7 +337,7 @@ static const NSInteger EDIT_COMMAND_MENU_ITEM_TAG = 0x464c4146;
 
 #define isOptionSet( option ) ((optionsSet & com_formdev_flatlaf_ui_FlatNativeMacLibrary_ ## option) != 0)
 #define isOptionClear( option ) ((optionsClear & com_formdev_flatlaf_ui_FlatNativeMacLibrary_ ## option) != 0)
-#define isOptionSetOrClear( option ) isOptionSet( option ) || isOptionClear( option )
+#define isOptionSetOrClear( option ) (isOptionSet( option ) || isOptionClear( option ))
 
 static jobjectArray newJavaStringArray( JNIEnv* env, jsize count ) {
 	jclass stringClass = env->FindClass( "java/lang/String" );
@@ -379,8 +411,14 @@ JNIEXPORT jobjectArray JNICALL Java_com_formdev_flatlaf_ui_FlatNativeMacLibrary_
 	NSString* nsDirectoryURL = JavaToNSString( env, directoryURL );
 	NSMutableArray* filters = initFilters( env, fileTypes );
 
+	// global reference to callback because it is invoked on macOS thread
+	// (local references are valid only on the Java thread)
+	jobject globalCallback = (callback != NULL) ? env->NewGlobalRef( callback ) : NULL;
+
 	NSArray* urls = NULL;
 	NSArray** purls = &urls;
+	jint selectedFormatIndex = -1;
+	jint* pSelectedFormatIndex = &selectedFormatIndex;
 
 	// show file dialog on macOS thread
 	[FlatJNFRunLoop performOnMainThreadWaiting:YES withBlock:^(){
@@ -453,8 +491,8 @@ JNIEXPORT jobjectArray JNICALL Java_com_formdev_flatlaf_ui_FlatNativeMacLibrary_
 		}
 
 		// initialize callback
-		if( callback != NULL )
-			[delegate initCallback :jvm :callback];
+		if( globalCallback != NULL )
+			[delegate initCallback :jvm :globalCallback];
 
 		// set file dialog delegate
 		dialog.delegate = delegate;
@@ -462,41 +500,54 @@ JNIEXPORT jobjectArray JNICALL Java_com_formdev_flatlaf_ui_FlatNativeMacLibrary_
 		// show dialog
 		NSModalResponse response = [dialog runModal];
 
-		// return selected filter
-		jint selectedFormatIndex = delegate.selectedFormatIndex;
-		env->SetIntArrayRegion( retFileTypeIndex, 0, 1, &selectedFormatIndex );
+		// remember selected filter (passed to Java on Java thread)
+		*pSelectedFormatIndex = delegate.selectedFormatIndex;
 
+		// clear (non-retained) delegate reference before releasing delegate
+		// because the dialog may outlive the delegate (e.g. if the autorelease pool is drained later)
+		dialog.delegate = nil;
 		[delegate release];
 
 		// return empty array if canceled
+		// (retained because the autorelease pool of the macOS thread may be drained
+		// before the array is used on the Java thread; released below)
 		if( response != NSModalResponseOK ) {
-			*purls = @[];
+			*purls = [[NSArray alloc] init];
 			return;
 		}
 
 		// get selected file(s)
-		*purls = getDialogURLs( dialog );
+		*purls = [getDialogURLs( dialog ) retain];
 
 		JNI_COCOA_CATCH()
 	}];
+
+	if( globalCallback != NULL )
+		env->DeleteGlobalRef( globalCallback );
+
+	// return selected filter
+	env->SetIntArrayRegion( retFileTypeIndex, 0, 1, &selectedFormatIndex );
 
 	// return null on failures
 	if( urls == NULL )
 		return NULL;
 
 	// convert URLs to Java string array
-	return urlsToStringArray( env, urls );
+	jobjectArray result = urlsToStringArray( env, urls );
+	[urls release];
+	return result;
 
 	JNI_COCOA_EXIT()
+	return NULL;
 }
 
 static NSArray* getDialogURLs( NSSavePanel* dialog ) {
 	if( [dialog isKindOfClass:[NSOpenPanel class]] )
-		return [[NSArray alloc] initWithArray: static_cast<NSOpenPanel*>(dialog).URLs];
+		return [[[NSArray alloc] initWithArray: static_cast<NSOpenPanel*>(dialog).URLs] autorelease];
 
 	NSURL* url = dialog.URL;
 	// use '[[NSArray alloc] initWithObject:url]' here because '@[url]' crashes on macOS 10.14
-	return (url != NULL) ? [[NSArray alloc] initWithObject:url] : @[];
+	return (url != NULL) ? [[[NSArray alloc] initWithObject:url] autorelease] : @[];
 }
 
 static jobjectArray urlsToStringArray( JNIEnv* env, NSArray* urls ) {

@@ -39,9 +39,8 @@ library {
 	)
 }
 
-var javaHome = System.getProperty( "java.home" )
-if( javaHome.endsWith( "jre" ) )
-	javaHome += "/.."
+// JDK used for JNI headers (see flatlaf-jni-headers plugin)
+val javaHome = flatlafJniHeaders.javaHome
 
 interface InjectedOps {
 	@get:Inject val fs: FileSystemOperations
@@ -53,7 +52,7 @@ tasks {
 		group = "build"
 		description = "Builds natives"
 
-		if( org.gradle.internal.os.OperatingSystem.current().isMacOsX() )
+		if( System.getProperty( "os.name" ).lowercase().startsWith( "mac" ) )
 			dependsOn( "linkReleaseArm64", "linkReleaseX86-64" )
 	}
 
@@ -64,8 +63,8 @@ tasks {
 		dependsOn( "jni-headers" )
 
 		includes.from(
-			"${javaHome}/include",
-			"${javaHome}/include/darwin"
+			javaHome.dir( "include" ),
+			javaHome.dir( "include/darwin" )
 		)
 
 		// compile Objective-C++ sources
@@ -93,7 +92,7 @@ tasks {
 
 		linkerArgs.addAll( toolChain.map {
 			when( it ) {
-				is Gcc, is Clang -> listOf( "-lobjc", "-framework", "Cocoa", "-mmacosx-version-min=$minOs" )
+				is Gcc, is Clang -> listOf( "-lobjc", "-framework", "Cocoa", "-mmacosx-version-min=$minOs", "-Wl,-x", "-Wl,-dead_strip" )
 				else -> emptyList()
 			}
 		} )
@@ -101,8 +100,19 @@ tasks {
 		val injectedOps = project.objects.newInstance<InjectedOps>()
 
 		doLast {
+/*sign
 			// sign shared library
-//			injectedOps.e.exec { commandLine( "codesign", "-s", "FormDev Software GmbH", "--timestamp", "${linkedFile.asFile.get()}" ) }
+			val dylib = linkedFile.asFile.get()
+			println( "---- sign ----" )
+			injectedOps.e.exec { commandLine( "codesign",
+				"--sign", "Developer ID Application: ...",
+				"--force", "--options", "runtime", "--timestamp", "--verbose=4",
+				dylib ) }
+			println( "---- verify ----" )
+			injectedOps.e.exec { commandLine( "codesign", "--verify", "--strict", "--verbose=2", dylib ) }
+			println( "---- display ----" )
+			injectedOps.e.exec { commandLine( "codesign", "--display", "--verbose=4", dylib ) }
+sign*/
 
 			// copy shared library to flatlaf-core resources
 			injectedOps.fs.copy {

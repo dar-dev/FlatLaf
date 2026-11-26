@@ -37,11 +37,17 @@ JNIEXPORT jint JNICALL Java_com_formdev_flatlaf_ui_FlatNativeMacLibrary_showMess
 	NSString* nsMessageText = JavaToNSString( env, messageText );
 	NSString* nsInformativeText = JavaToNSString( env, informativeText );
 
-	jint buttonCount = env->GetArrayLength( buttons );
+	// (null array is handled as empty array, which shows a single OK button)
+	jint buttonCount = (buttons != NULL) ? env->GetArrayLength( buttons ) : 0;
 	NSMutableArray* nsButtons = [NSMutableArray array];
 	for( int i = 0; i < buttonCount; i++ ) {
-		NSString* nsButton = JavaToNSString( env, (jstring) env->GetObjectArrayElement( buttons, i ) );
-		[nsButtons addObject:nsButton];
+		jstring button = (jstring) env->GetObjectArrayElement( buttons, i );
+		NSString* nsButton = JavaToNSString( env, button );
+		env->DeleteLocalRef( button );
+
+		// use empty string for null element to keep button indices
+		// (NSMutableArray does not allow nil)
+		[nsButtons addObject:(nsButton != NULL) ? nsButton : @""];
 	}
 
 	jint result = -1;
@@ -78,6 +84,7 @@ JNIEXPORT jint JNICALL Java_com_formdev_flatlaf_ui_FlatNativeMacLibrary_showMess
 
 		// show alert
 		NSInteger response = [alert runModal];
+		[alert release];
 
 		// if no buttons added, which shows a single OK button, the response is 0 when clicking OK
 		// if buttons added, response is 1000+buttonIndex
@@ -87,4 +94,5 @@ JNIEXPORT jint JNICALL Java_com_formdev_flatlaf_ui_FlatNativeMacLibrary_showMess
 	return result;
 
 	JNI_COCOA_EXIT()
+	return -1;
 }
